@@ -23,6 +23,8 @@
 #include <algorithm>
 #include <x86intrin.h>
 
+#include "bit_vector/bit_vector.hpp"
+
 namespace cuda_bp {
 
 namespace details {
@@ -83,7 +85,6 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
   size_t offset = std::accumulate(bits.begin(), std::prev(bits.end()), 0) * block_size;
   offset += (n % block_size) * bits.back();
   offset = ((offset + 32ULL - 1) & -32ULL) / 8;
-  std::cerr << offset << std::endl;
   auto header = out+offset;
   for(auto b : bits) {
     // Unary encode the header?
@@ -93,11 +94,27 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
 
 /*
  * Procedure:
- *  - Read offset
+ *  - Read offsets
  *  - Transfer payload to GPU
  *  - Read header
  *  - all decode kernel
  */
-static void decode(uint32_t *out, const uint8_t *in, size_t n) {}
+static void decode(uint32_t *out, const uint8_t *in, size_t n) {
+    // auto header_len = read_unary(in);
+    // auto payload_len = read_unary(in);
+
+    // auto payload = in + offset;
+    // cudaMalloc(d_payload, payload_len);
+    //  cudaMemcopy(d_payload, payload, payload_len);
+
+    // cudaMalloc(d_decoded, payload_len);
+
+    // while(skip != payload_len){
+    //    auto bit = read_unary(in);
+    //    skip += decode<<<block_size, grid_size>>>(payload + skip, len, bit);
+    // }
+
+    //  cudaMemcopy(out, d_decoded, payload_len);
+}
 
 } // namespace cuda_bp

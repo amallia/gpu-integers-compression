@@ -14,5 +14,6 @@ if(CUDA_FOUND)
   target_link_libraries(cuda_bp_test
   gtest
   gmock
+  binary_packing
   )
 endif()
