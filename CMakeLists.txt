@@ -24,14 +24,15 @@ else ()
     message(FATAL_ERROR "Please, use GCC or Clang compiler!")
 endif()
 
-# if (USE_SANITIZERS)
+if (USE_SANITIZERS)
  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
-# endif ()
+endif ()
 
 
 add_subdirectory(external)
 
 find_package(CUDA)
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --gpu-architecture sm_52)
 
 include_directories(include)
 add_library(binary_packing INTERFACE)

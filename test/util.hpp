@@ -18,6 +18,7 @@
 #include <vector>
 #include <random>
 #include <limits>
+#include <algorithm>
 
 std::vector<uint32_t> generate_random_vector(size_t n, uint32_t max_value = std::numeric_limits<uint32_t>::max()) {
     std::random_device rd;
