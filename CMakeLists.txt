@@ -31,6 +31,8 @@ endif()
 
 add_subdirectory(external)
 
+find_package(CUDA)
+
 include_directories(include)
 add_library(binary_packing INTERFACE)
 target_include_directories(binary_packing INTERFACE
