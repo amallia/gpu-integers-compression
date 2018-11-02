@@ -17,8 +17,15 @@
 #include <gtest/gtest.h>
 #include <vector>
 
+#include "bp/cuda_bp.cuh"
+
 #include "util.hpp"
 
+TEST(cuda_bp, random) {
+    std::vector<uint32_t> values{1, 4, 5, 10, 18};
+    std::vector<uint8_t> buffer(values.size() * 8);
+    cuda_bp::encode(buffer.data(), values.data(), values.size());
+}
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

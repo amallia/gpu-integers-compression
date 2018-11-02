@@ -16,18 +16,88 @@
 
 #pragma once
 
-#include <utility>
+#include <iostream>
 
-namespace bp {
+#include <utility>
+#include <numeric>
+#include <algorithm>
+#include <x86intrin.h>
+
+namespace cuda_bp {
 
 namespace details {
 
+template <class T> __attribute__((const)) T *padTo32bits(T *inbyte) {
+  return reinterpret_cast<T *>((reinterpret_cast<uintptr_t>(inbyte) + 3) & ~3);
+}
+
+bool bsr64(unsigned long *const index, const uint64_t mask) {
+#if defined(__GNUC__) || defined(__clang__)
+  if (mask) {
+    *index = (unsigned long)(63 - __builtin_clzll(mask));
+    return true;
+  } else {
+    return false;
+  }
+#elif defined(_MSC_VER)
+  return _BitScanReverse64(index, mask) != 0;
+#else
+#error Unsupported platform
+#endif
+}
+
+inline uint8_t msb(uint64_t x, unsigned long &ret) { return bsr64(&ret, x); }
+
+inline uint8_t msb(uint64_t x) {
+  assert(x);
+  unsigned long ret = -1U;
+  msb(x, ret);
+  return (uint8_t)ret;
+}
+
+inline size_t ceil_log2(const uint64_t x) {
+  assert(x > 0);
+  return (x > 1) ? msb(x - 1) + 1 : 0;
+}
+
 } // namespace details
 
-static void encode(uint8_t *out, const uint32_t *in, size_t n) {
+
+/*
+ * Format:
+ * ________________________________________________________
+ * | Offset to payload (unary) | Header (unary) | Payload |
+ * --------------------------------------------------------
+ *
+ */
+template<size_t block_size = 32>
+static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
+  auto blocks = std::ceil((double)n / block_size);
+  std::vector<size_t> bits(blocks,0);
+  for (size_t i = 0; i < n; ++i) {
+    auto value = in[i];
+    auto bit = details::ceil_log2(value);
+    auto b = i/block_size;
+    bits[b] = std::max(bit, bits[b]);
+  }
+  size_t offset = std::accumulate(bits.begin(), std::prev(bits.end()), 0) * block_size;
+  offset += (n % block_size) * bits.back();
+  offset = ((offset + 32ULL - 1) & -32ULL) / 8;
+  std::cerr << offset << std::endl;
+  auto header = out+offset;
+  for(auto b : bits) {
+    // Unary encode the header?
+  }
+  return offset;
 }
 
-static void decode(uint32_t *out, const uint8_t *in, size_t n) {
-}
+/*
+ * Procedure:
+ *  - Read offset
+ *  - Transfer payload to GPU
+ *  - Read header
+ *  - all decode kernel
+ */
+static void decode(uint32_t *out, const uint8_t *in, size_t n) {}
 
-} // namespace bp
+} // namespace cuda_bp

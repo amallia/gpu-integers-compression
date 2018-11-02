@@ -33,7 +33,7 @@ endif ()
 set(gtest_disable_pthreads ON)
 add_subdirectory(external)
 
-find_package(CUDA REQUIRED)
+find_package(CUDA)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --gpu-architecture sm_52)
 
 include_directories(include)
