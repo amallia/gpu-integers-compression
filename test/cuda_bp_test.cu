@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <vector>
 
 #include "util.hpp"
 
-using ::testing::ContainerEq;
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

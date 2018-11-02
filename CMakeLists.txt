@@ -7,6 +7,8 @@ endif()
 MESSAGE( STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE} )
 
 project(binary_packing)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     if (CXX_COMPILER_VERSION VERSION_LESS 4.7)
@@ -28,10 +30,10 @@ if (USE_SANITIZERS)
  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
 endif ()
 
-
+set(gtest_disable_pthreads ON)
 add_subdirectory(external)
 
-find_package(CUDA)
+find_package(CUDA REQUIRED)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --gpu-architecture sm_52)
 
 include_directories(include)
