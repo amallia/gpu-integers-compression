@@ -22,16 +22,17 @@
 #include "util.hpp"
 
 TEST(cuda_bp, random) {
-    std::vector<uint32_t> values{1, 4, 5, 10, 18};
-    std::vector<uint8_t> buffer(values.size() * 8);
-    cuda_bp::encode(buffer.data(), values.data(), values.size());
+  std::vector<uint32_t> values{12, 4,  5,  10, 18, 1, 4,  5,  10, 18, 1,
+                               4, 5,  10, 18, 1,  4, 5,  10, 18, 1,  4,
+                               5, 10, 18, 1,  4,  5, 10, 18, 10, 18};
+  std::vector<uint8_t> buffer(values.size() * 8);
+  cuda_bp::encode(buffer.data(), values.data(), values.size());
 
-    std::vector<uint32_t> decoded_values(5);
-    cuda_bp::decode(decoded_values.data(), buffer.data(), values.size());
-
+  std::vector<uint32_t> decoded_values(32);
+  cuda_bp::decode(decoded_values.data(), buffer.data(), values.size());
 }
 
 int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

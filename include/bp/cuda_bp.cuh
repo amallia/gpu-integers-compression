@@ -19,6 +19,7 @@
 #include <iostream>
 
 #include <algorithm>
+#include <cuda.h>
 #include <numeric>
 #include <utility>
 #include <x86intrin.h>
@@ -64,21 +65,22 @@ inline size_t ceil_log2(const uint64_t x) {
 
 class bit_writer {
 public:
-  bit_writer(uint8_t *buf) : m_buf(buf), m_size(0) {}
+  bit_writer(uint8_t *buf)
+      : m_buf(reinterpret_cast<uint32_t *>(buf)), m_size(0) {}
 
   void write(uint32_t bits, uint32_t len) {
     if (!len)
       return;
-    uint32_t pos_in_word = m_size % 8;
+    uint32_t pos_in_word = m_size % 32;
 
     m_size += len;
     if (pos_in_word == 0) {
       *m_buf = bits;
     } else {
       *m_buf |= bits << pos_in_word;
-      if (len >= 8 - pos_in_word) {
+      if (len >= 32 - pos_in_word) {
         m_buf += 1;
-        *m_buf = bits >> (8 - pos_in_word);
+        *m_buf = bits >> (32 - pos_in_word);
       }
     }
   }
@@ -91,7 +93,7 @@ public:
   }
 
 private:
-  uint8_t *m_buf;
+  uint32_t *m_buf;
   size_t m_size;
 };
 
@@ -130,6 +132,9 @@ private:
   uint64_t m_buf;
   size_t m_pos;
 };
+
+size_t size_align8(size_t size) { return (size + 8ULL - 1) & ~(8ULL - 1); }
+
 } // namespace details
 
 /*
@@ -155,17 +160,39 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
   size_t offset = bits_sum * block_size;
   bits_sum += bits.back();
   offset += bits.back() * (n % block_size);
-  offset = ((offset + 32ULL - 1) & -32ULL) / 8;
-  // auto header = out + offset;
+  offset = details::size_align8(offset) / 8;
 
-  bw.write_unary(bits_sum);
+  bw.write_unary(details::size_align8(bits_sum) / 8);
   bw.write_unary(offset);
 
   for (auto b : bits) {
     bw.write_unary(b);
   }
+
+  for (size_t i = 0; i < n; ++i) {
+    auto value = in[i];
+    auto b = i / block_size;
+    bw.write(value, bits[b]);
+  }
+
   return offset;
 }
+
+__global__
+void warmUpGPU()
+{
+  // do nothing
+}
+
+
+__global__
+void kernel_decode(uint32_t *out, const uint8_t *in, size_t bit)
+{
+   int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+   out[index] = bit *index / 8;
+}
+
 
 /*
  * Procedure:
@@ -175,28 +202,42 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
  *  - all decode kernel
  */
 static void decode(uint32_t *out, const uint8_t *in, size_t n) {
+  warmUpGPU<<<1, 1>>>();
+
   details::bit_reader br(in);
   auto header_len = br.read_unary();
   auto payload_len = br.read_unary();
-
   std::cerr << header_len << std::endl;
   std::cerr << payload_len << std::endl;
 
-  // auto header_len = read_unary(in);
-  // auto payload_len = read_unary(in);
+  auto payload = in + header_len;
+  uint8_t *d_payload;
+  cudaMalloc((void **)&d_payload, payload_len * sizeof(uint8_t));
+  cudaMemcpy(d_payload, payload, payload_len * sizeof(uint8_t),
+             cudaMemcpyHostToDevice);
 
-  // auto payload = in + offset;
-  // cudaMalloc(d_payload, payload_len);
-  //  cudaMemcopy(d_payload, payload, payload_len);
+  uint32_t *d_decoded;
+  cudaMalloc((void **)&d_decoded, n * sizeof(uint32_t));
 
-  // cudaMalloc(d_decoded, payload_len);
+  auto decoded = 0;
+  auto skip = 0;
+  while (n - decoded >= 32) {
+    auto bit = br.read_unary();
+    std::cerr << bit << std::endl;
+    kernel_decode<<<32, 1>>>(d_decoded, d_payload + skip, bit);
+    skip += 4*bit;
+    decoded += 32;
+  }
 
-  // while(skip != payload_len){
-  //    auto bit = read_unary(in);
-  //    skip += decode<<<block_size, grid_size>>>(payload + skip, len, bit);
-  // }
+  cudaMemcpy(out, d_decoded, n * sizeof(uint32_t), cudaMemcpyDeviceToHost);
 
-  //  cudaMemcopy(out, d_decoded, payload_len);
+  std::cerr << out[2] << std::endl;
+
+  cudaFree(d_payload);
+  cudaFree(d_decoded);
 }
+
+
+
 
 } // namespace cuda_bp
