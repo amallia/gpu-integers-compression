@@ -76,6 +76,9 @@ public:
     m_size += len;
     if (pos_in_word == 0) {
       *m_buf = bits;
+      if (len == 32) {
+        m_buf += 1;
+        }
     } else {
       *m_buf |= bits << pos_in_word;
       if (len >= 32 - pos_in_word) {
@@ -142,6 +145,9 @@ size_t size_align8(size_t size) { return (size + 8ULL - 1) & ~(8ULL - 1); }
  * ________________________________________________________
  * | Offset to payload (unary) | Header (unary) | Payload |
  * --------------------------------------------------------
+ * IDEA: fixed 8 bits unary encoded words for the bit-length.
+ * popcount 8bit https://stackoverflow.com/questions/17518774/sse-4-popcount-for-16-8-bit-values
+ * then lunch 16 kernels
  *
  */
 template <size_t block_size = 32>
@@ -162,17 +168,20 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
   offset += bits.back() * (n % block_size);
   offset = details::size_align8(offset) / 8;
 
-  bw.write_unary(details::size_align8(bits_sum) / 8);
-  bw.write_unary(offset);
-
+  // bw.write_unary(details::size_align8(bits_sum) / 8);
+  // bw.write_unary(offset);
+  bw.write(std::ceil((double)details::size_align8(bits_sum) / 8), 32);
+  bw.write(offset, 32);
   for (auto b : bits) {
     bw.write_unary(b);
   }
 
+  bw.write(0, std::ceil((double)details::size_align8(bits_sum)) - bits_sum);
+
   for (size_t i = 0; i < n; ++i) {
     auto value = in[i];
     auto b = i / block_size;
-    bw.write(value, bits[b]);
+    bw.write(value, 32);
   }
 
   return offset;
@@ -186,11 +195,11 @@ void warmUpGPU()
 
 
 __global__
-void kernel_decode(uint32_t *out, const uint8_t *in, size_t bit)
+void kernel_decode(uint32_t *out, const uint32_t *in, size_t bit)
 {
    int index = blockIdx.x * blockDim.x + threadIdx.x;
 
-   out[index] = bit *index / 8;
+   out[index] = *(in+index);
 }
 
 
@@ -205,12 +214,22 @@ static void decode(uint32_t *out, const uint8_t *in, size_t n) {
   warmUpGPU<<<1, 1>>>();
 
   details::bit_reader br(in);
-  auto header_len = br.read_unary();
-  auto payload_len = br.read_unary();
-  std::cerr << header_len << std::endl;
-  std::cerr << payload_len << std::endl;
+  auto header_len = br.read(32);
+  auto payload_len = 4*32;
+  // std::cerr << header_len << std::endl;
+  // std::cerr << payload_len << std::endl;
 
-  auto payload = in + header_len;
+  auto payload = in + header_len + 8;
+
+  // std::cerr << size_t(payload[0]) << std::endl;
+  // std::cerr << size_t(payload[1]) << std::endl;
+  // std::cerr << size_t(payload[2]) << std::endl;
+  // std::cerr << size_t(payload[3]) << std::endl;
+  // std::cerr << size_t(payload[4]) << std::endl;
+  // std::cerr << size_t(payload[5]) << std::endl;
+  // std::cerr << size_t(payload[6]) << std::endl;
+  // std::cerr << size_t(payload[7]) << std::endl;
+
   uint8_t *d_payload;
   cudaMalloc((void **)&d_payload, payload_len * sizeof(uint8_t));
   cudaMemcpy(d_payload, payload, payload_len * sizeof(uint8_t),
@@ -222,16 +241,48 @@ static void decode(uint32_t *out, const uint8_t *in, size_t n) {
   auto decoded = 0;
   auto skip = 0;
   while (n - decoded >= 32) {
-    auto bit = br.read_unary();
-    std::cerr << bit << std::endl;
-    kernel_decode<<<32, 1>>>(d_decoded, d_payload + skip, bit);
-    skip += 4*bit;
+  //   auto bit = br.read_unary();
+  //   // std::cerr << bit << std::endl;
+    kernel_decode<<<32, 1>>>(d_decoded, reinterpret_cast<uint32_t*>(d_payload + skip), 0);
+    // skip += 4*bit;
     decoded += 32;
   }
 
   cudaMemcpy(out, d_decoded, n * sizeof(uint32_t), cudaMemcpyDeviceToHost);
 
-  std::cerr << out[2] << std::endl;
+  std::cerr << size_t(out[0]) << std::endl;
+  std::cerr << size_t(out[1]) << std::endl;
+  std::cerr << size_t(out[2]) << std::endl;
+  std::cerr << size_t(out[3]) << std::endl;
+  std::cerr << size_t(out[4]) << std::endl;
+  std::cerr << size_t(out[5]) << std::endl;
+  std::cerr << size_t(out[6]) << std::endl;
+  std::cerr << size_t(out[7]) << std::endl;
+  std::cerr << size_t(out[8]) << std::endl;
+  std::cerr << size_t(out[9]) << std::endl;
+  std::cerr << size_t(out[10]) << std::endl;
+  std::cerr << size_t(out[11]) << std::endl;
+  std::cerr << size_t(out[12]) << std::endl;
+  std::cerr << size_t(out[13]) << std::endl;
+  std::cerr << size_t(out[14]) << std::endl;
+  std::cerr << size_t(out[15]) << std::endl;
+  std::cerr << size_t(out[16]) << std::endl;
+  std::cerr << size_t(out[17]) << std::endl;
+  std::cerr << size_t(out[18]) << std::endl;
+  std::cerr << size_t(out[19]) << std::endl;
+  std::cerr << size_t(out[20]) << std::endl;
+  std::cerr << size_t(out[21]) << std::endl;
+  std::cerr << size_t(out[22]) << std::endl;
+  std::cerr << size_t(out[23]) << std::endl;
+  std::cerr << size_t(out[24]) << std::endl;
+  std::cerr << size_t(out[25]) << std::endl;
+  std::cerr << size_t(out[26]) << std::endl;
+  std::cerr << size_t(out[27]) << std::endl;
+  std::cerr << size_t(out[28]) << std::endl;
+  std::cerr << size_t(out[29]) << std::endl;
+  std::cerr << size_t(out[30]) << std::endl;
+  std::cerr << size_t(out[31]) << std::endl;
+
 
   cudaFree(d_payload);
   cudaFree(d_decoded);
