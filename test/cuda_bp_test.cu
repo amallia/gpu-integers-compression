@@ -24,7 +24,7 @@
 TEST(cuda_bp, random) {
   std::vector<uint32_t> values{12, 4,  5,  10, 18, 1, 4,  5,  10, 18, 1,
                                4, 5,  10, 18, 1,  4, 5,  10, 18, 1,  4,
-                               5, 10, 18, 1,  4,  5, 10, 18, 10, 18};
+                               5, 10, 18, 1,  4,  5, 10, 18, 10, 18, 11};
   std::vector<uint8_t> buffer(values.size() * 8);
   cuda_bp::encode(buffer.data(), values.data(), values.size());
 

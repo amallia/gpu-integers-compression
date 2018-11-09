@@ -4,6 +4,6 @@
 [submodule "external/benchmark"]
 	path = external/benchmark
 	url = https://github.com/google/benchmark.git
-[submodule "external/bit_vector"]
-	path = external/bit_vector
-	url = https://github.com/amallia/bit_vector.git
+[submodule "external/bit_stream"]
+	path = external/bit_stream
+	url = https://github.com/amallia/bit_stream.git
