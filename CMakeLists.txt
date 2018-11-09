@@ -10,6 +10,9 @@ project(binary_packing)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_CUDA_STANDARD 11)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     if (CXX_COMPILER_VERSION VERSION_LESS 4.7)
         message(STATUS "GCC version must be at least 4.7!")

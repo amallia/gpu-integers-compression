@@ -17,7 +17,7 @@
 #pragma once
 
 #include <iostream>
-
+#include <cassert>
 #include <algorithm>
 #include <cuda.h>
 #include <numeric>
