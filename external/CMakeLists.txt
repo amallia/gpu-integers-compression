@@ -9,3 +9,5 @@ set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Suppressing benchmark's tests" FORC
 add_subdirectory(benchmark EXCLUDE_FROM_ALL)
 
 add_subdirectory(bit_stream EXCLUDE_FROM_ALL)
+
+add_subdirectory(synthetic EXCLUDE_FROM_ALL)

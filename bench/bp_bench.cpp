@@ -15,7 +15,5 @@
  */
 
 #include "benchmark/benchmark.h"
-#include "test/util.hpp"
-
 
 BENCHMARK_MAIN();

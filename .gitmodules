@@ -7,3 +7,6 @@
 [submodule "external/bit_stream"]
 	path = external/bit_stream
 	url = https://github.com/amallia/bit_stream.git
+[submodule "external/synthetic"]
+	path = external/synthetic
+	url = https://github.com/amallia/synthetic.git

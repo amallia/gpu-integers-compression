@@ -18,8 +18,6 @@
 #include <gtest/gtest.h>
 #include <vector>
 
-#include "util.hpp"
-
 using ::testing::ContainerEq;
 
 int main(int argc, char **argv) {

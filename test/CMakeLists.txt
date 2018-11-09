@@ -15,5 +15,6 @@ if(CUDA_FOUND)
   gtest
   gmock
   binary_packing
+  synthetic
   )
 endif()
