@@ -37,7 +37,9 @@ set(gtest_disable_pthreads ON)
 add_subdirectory(external)
 
 find_package(CUDA)
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --gpu-architecture sm_52)
+
+CUDA_SELECT_NVCC_ARCH_FLAGS(ARCH_FLAGS "Auto")
+list(APPEND CUDA_NVCC_FLAGS ${ARCH_FLAGS})
 
 include_directories(include)
 add_library(binary_packing INTERFACE)

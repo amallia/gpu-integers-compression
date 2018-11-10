@@ -87,11 +87,12 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
   std::vector<size_t> bits(blocks, 0);
   for (size_t i = 0; i < n; ++i) {
     auto value = in[i];
+    // std::cerr << value << std::endl;
     auto bit = details::ceil_log2(value);
     auto b = i / block_size;
     bits[b] = std::max(bit, bits[b]);
   }
-
+bits[0]=8;
   auto bits_sum = std::accumulate(bits.begin(), std::prev(bits.end()), 0);
   size_t offset = bits_sum * block_size;
   bits_sum += bits.back();
@@ -100,15 +101,13 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
 
   // bw.write_unary(details::size_align8(bits_sum) / 8);
   // bw.write_unary(offset);
-  bw.write(round_up_div(details::size_align8(bits_sum), 8), 32);
+  bw.write(round_up_div(details::size_align8(bits_sum + bits.size()), 8), 32);
   bw.write(offset, 32);
   for (auto b : bits) {
     bw.write_unary(b);
   }
 
   bw.write(0, details::size_align8(bits_sum + bits.size()) - bits_sum - bits.size());
-
-
   for (size_t i = 0; i < n; ++i) {
     auto value = in[i];
     auto b = i / block_size;
@@ -143,6 +142,19 @@ void decode(uint32_t *out, const uint8_t *in, size_t bit, size_t n)
     }
 }
 
+void printBinary(unsigned long long myNumber)
+{
+    int numberOfBits = sizeof(unsigned long long)*8;
+    for (int i=numberOfBits-1; i>=0; i--) {
+        bool isBitSet = (myNumber & (1<<i));
+        if (isBitSet) {
+            std::cout << "1";
+        } else {
+            std::cout << "0";
+        }
+    }
+}
+
 
 
 /*
@@ -169,6 +181,9 @@ static void decode(uint32_t *out, const uint8_t *in, size_t n) {
 
   auto decoded = 0;
   auto skip = 0;
+
+
+
   while (n - decoded >= 32) {
     auto bit = br.read_unary();
     kernel_decode<<<32, 1>>>(d_decoded, reinterpret_cast<const uint64_t*>(d_payload + skip), bit);

@@ -29,7 +29,12 @@ TEST(cuda_bp, random) {
     auto max = 34;
 
     std::vector<uint32_t> values = synthetic::uniform(n, min, max);
-    std::vector<uint8_t>  buffer(values.size() * 8);
+    // std::vector<uint32_t> values = {1, 3, 5, 6};
+    for (auto&&v:values)
+    {
+        // std::cerr<<v<<std::endl;
+    }
+    std::vector<uint8_t>  buffer(values.size() * 8, 0);
 
     cuda_bp::encode(buffer.data(), values.data(), values.size());
 
@@ -38,6 +43,7 @@ TEST(cuda_bp, random) {
 
     EXPECT_EQ(decoded_values.size(), values.size());
     for (size_t i = 0; i < values.size(); ++i) {
+        // std::cerr<<decoded_values[i] << " aa "<<values[i]<<std::endl;
         EXPECT_EQ(decoded_values[i], values[i]);
     }
 }
