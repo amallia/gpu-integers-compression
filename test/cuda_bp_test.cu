@@ -24,9 +24,9 @@
 using namespace ::testing;
 
 TEST(cuda_bp, random) {
-    auto n   = 32;
+    auto n   = 1000;
     auto min = 1;
-    auto max = 34;
+    auto max = 100000;
 
     std::vector<uint32_t> values = synthetic::uniform(n, min, max);
     // std::vector<uint32_t> values = {1, 3, 5, 6};

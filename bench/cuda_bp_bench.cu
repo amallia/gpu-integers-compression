@@ -18,32 +18,72 @@
 #include "synthetic/uniform.hpp"
 #include "benchmark/benchmark.h"
 
-std::vector<uint32_t> generate_random_vector(size_t n) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::vector<uint32_t> values(n);
-    std::uniform_int_distribution<> dis(uint32_t(0));
-    std::generate(values.begin(), values.end(), [&](){ return dis(gen); });
-    return values;
+#include <cuda.h>
+
+__global__
+void warmUpGPU()
+{
+  // do nothing
 }
 
-static void decode(benchmark::State &state) {
-    while (state.KeepRunning()) {
-        state.PauseTiming();
-        auto n   = state.range(0);
-        auto min = 1;
-        auto max = state.range(0)+2;
+class RandomValuesFixture : public ::benchmark::Fixture {
 
-        std::vector<uint32_t> values = generate_random_vector(state.range(0));
-        std::vector<uint8_t>  buffer(values.size() * 8);
-        cuda_bp::encode(buffer.data(), values.data(), values.size());
-        std::vector<uint32_t> decoded_values(values.size());
-        state.ResumeTiming();
-        cuda_bp::decode(decoded_values.data(), buffer.data(), values.size());
+    static std::vector<uint32_t> generate_random_vector(size_t n) {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::vector<uint32_t> values(n);
+        std::uniform_int_distribution<> dis(uint32_t(0));
+        std::generate(values.begin(), values.end(), [&](){ return dis(gen); });
+        return values;
+    }
+
+public:
+    using ::benchmark::Fixture::SetUp;
+    using ::benchmark::Fixture::TearDown;
+
+    virtual void SetUp(::benchmark::State& st) {
+        std::vector<uint32_t> values = generate_random_vector(st.range(0));
+        encoded_values.resize(values.size() * 8);
+        cuda_bp::encode(encoded_values.data(), values.data(), values.size());
+        decoded_values.resize(values.size());
+        warmUpGPU<<<1, 1>>>();
+
+    }
+
+    virtual void TearDown(::benchmark::State&) {
+        encoded_values.clear();
+        decoded_values.clear();
+    }
+
+    std::vector<uint8_t>  encoded_values;
+    std::vector<uint32_t> decoded_values;
+};
+
+
+BENCHMARK_DEFINE_F(RandomValuesFixture, decode)(benchmark::State& state) {
+    while (state.KeepRunning()) {
+        cuda_bp::decode(decoded_values.data(), encoded_values.data(), decoded_values.size());
     }
 }
+BENCHMARK_REGISTER_F(RandomValuesFixture, decode)->Range(1ULL<<14, 1ULL<<28);
 
-BENCHMARK(decode)->Range(1ULL<<5, 1ULL<<20);
+// static void decode(benchmark::State &state) {
+//     while (state.KeepRunning()) {
+//         // state.PauseTiming();
+//         // auto n   = state.range(0);
+//         // auto min = 1;
+//         // auto max = state.range(0)+2;
+
+//         // std::vector<uint32_t> values = generate_random_vector(state.range(0));
+//         // std::vector<uint8_t>  buffer(values.size() * 8);
+//         // cuda_bp::encode(buffer.data(), values.data(), values.size());
+//         // std::vector<uint32_t> decoded_values(values.size());
+//         // state.ResumeTiming();
+//         // cuda_bp::decode(decoded_values.data(), buffer.data(), values.size());
+//     }
+// }
+
+// BENCHMARK(decode)->Range(1ULL<<28, 1ULL<<30);
 
 
 BENCHMARK_MAIN();
