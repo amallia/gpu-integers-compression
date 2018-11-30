@@ -36,7 +36,7 @@ public:
     virtual void SetUp(::benchmark::State& st) {
         using namespace FastPForLib;
 
-        IntegerCODEC &codec = *CODECFactory::getFromName("BP32");
+        IntegerCODEC &codec = *CODECFactory::getFromName("simdbinarypacking");
 
         std::vector<uint32_t> values = generate_random_vector(st.range(0));
         encoded_values.resize(values.size() * 8);
@@ -61,7 +61,7 @@ public:
 
 BENCHMARK_DEFINE_F(RandomValuesFixture, decode)(benchmark::State& state) {
     using namespace FastPForLib;
-    IntegerCODEC &codec = *CODECFactory::getFromName("BP32");
+    IntegerCODEC &codec = *CODECFactory::getFromName("simdbinarypacking");
 
     while (state.KeepRunning()) {
           size_t recoveredsize = 0;
@@ -93,8 +93,8 @@ BENCHMARK_REGISTER_F(RandomValuesFixture, decode)->Range(1ULL<<14, 1ULL<<28);
 BENCHMARK_MAIN();
 
 
-// 2018-11-30 09:00:35
-// Running ./bench/bp_bench
+// 2018-11-30 09:07:33
+// Running ./bench/simdbp_bench
 // Run on (40 X 3300 MHz CPU s)
 // CPU Caches:
 //   L1 Data 32K (x20)
@@ -105,11 +105,11 @@ BENCHMARK_MAIN();
 // ----------------------------------------------------------------------------
 // Benchmark                                     Time           CPU Iterations
 // ----------------------------------------------------------------------------
-// RandomValuesFixture/decode/16384          15343 ns      15339 ns      52858
-// RandomValuesFixture/decode/32768          26115 ns      26100 ns      33159
-// RandomValuesFixture/decode/262144        166591 ns     166587 ns       4190
-// RandomValuesFixture/decode/2097152      1470045 ns    1469707 ns        521
-// RandomValuesFixture/decode/16777216    15886532 ns   15885461 ns         44
-// RandomValuesFixture/decode/134217728  153930244 ns  153917222 ns          4
-// RandomValuesFixture/decode/268435456  339051367 ns  337930116 ns          2
+// RandomValuesFixture/decode/16384           4886 ns       4885 ns     118584
+// RandomValuesFixture/decode/32768           9374 ns       9340 ns      83961
+// RandomValuesFixture/decode/262144         98812 ns      98756 ns       7701
+// RandomValuesFixture/decode/2097152      1061515 ns    1060834 ns        791
+// RandomValuesFixture/decode/16777216    13501458 ns   13501060 ns         58
+// RandomValuesFixture/decode/134217728  201160836 ns  201150623 ns          6
+// RandomValuesFixture/decode/268435456  206584062 ns  206573748 ns          3
 //

@@ -5,6 +5,7 @@ foreach(BENCH_SRC ${BENCH_SOURCES})
     target_link_libraries(${BENCH_SRC_NAME}
         benchmark
         binary_packing
+        FastPFor
         synthetic
     )
     target_include_directories(${BENCH_SRC_NAME} BEFORE PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
