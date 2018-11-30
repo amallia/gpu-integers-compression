@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include "bp/cuda_bp.cuh"
 #include "synthetic/uniform.hpp"
 #include "benchmark/benchmark.h"
@@ -42,20 +44,29 @@ public:
     using ::benchmark::Fixture::TearDown;
 
     virtual void SetUp(::benchmark::State& st) {
-        std::vector<uint32_t> values = generate_random_vector(st.range(0));
+        values = generate_random_vector(st.range(0));
         encoded_values.resize(values.size() * 8);
-        cuda_bp::encode(encoded_values.data(), values.data(), values.size());
+        auto compressedsize = cuda_bp::encode(encoded_values.data(), values.data(), values.size());
+        encoded_values.resize(compressedsize);
+        encoded_values.shrink_to_fit();
+
         decoded_values.resize(values.size());
         warmUpGPU<<<1, 1>>>();
 
     }
 
     virtual void TearDown(::benchmark::State&) {
+        ASSERT_EQ(decoded_values.size(), values.size());
+        for (size_t i = 0; i < values.size(); ++i)
+        {
+            ASSERT_EQ(decoded_values[i], values[i]);
+        }
+        values.clear();
         encoded_values.clear();
         decoded_values.clear();
     }
-
-    std::vector<uint8_t>  encoded_values;
+    std::vector<uint32_t> values;
+    std::vector<uint8_t> encoded_values;
     std::vector<uint32_t> decoded_values;
 };
 
@@ -64,26 +75,9 @@ BENCHMARK_DEFINE_F(RandomValuesFixture, decode)(benchmark::State& state) {
     while (state.KeepRunning()) {
         cuda_bp::decode(decoded_values.data(), encoded_values.data(), decoded_values.size());
     }
+    auto bpi = double(8*encoded_values.size())/decoded_values.size();
+    state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);
 }
 BENCHMARK_REGISTER_F(RandomValuesFixture, decode)->Range(1ULL<<14, 1ULL<<28);
-
-// static void decode(benchmark::State &state) {
-//     while (state.KeepRunning()) {
-//         // state.PauseTiming();
-//         // auto n   = state.range(0);
-//         // auto min = 1;
-//         // auto max = state.range(0)+2;
-
-//         // std::vector<uint32_t> values = generate_random_vector(state.range(0));
-//         // std::vector<uint8_t>  buffer(values.size() * 8);
-//         // cuda_bp::encode(buffer.data(), values.data(), values.size());
-//         // std::vector<uint32_t> decoded_values(values.size());
-//         // state.ResumeTiming();
-//         // cuda_bp::decode(decoded_values.data(), buffer.data(), values.size());
-//     }
-// }
-
-// BENCHMARK(decode)->Range(1ULL<<28, 1ULL<<30);
-
 
 BENCHMARK_MAIN();

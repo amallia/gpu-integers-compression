@@ -206,6 +206,21 @@ static void decode(uint32_t *out, const uint8_t *in, size_t n) {
   auto decoded = 0;
   auto skip = 0;
 
+  // std::cerr << header_len << std::endl;;
+
+  // std::cerr << size_t(reinterpret_cast<const uint8_t*>(payload));
+
+  // std::cerr << size_t(reinterpret_cast<const uint8_t*>(payload));
+
+  // std::cerr << " " ;
+  // std::cerr << size_t(reinterpret_cast<const uint64_t*>(in));
+  // std::cerr << " " ;
+
+  // printBinary(*(reinterpret_cast<const uint64_t*>(payload)));
+  // printBinary(*(reinterpret_cast<const uint64_t*>(payload)+1));
+  // printBinary(*(reinterpret_cast<const uint64_t*>(payload)+2));
+
+
 
   while (n - decoded >= 32) {
     // auto bit = br.read_unary();

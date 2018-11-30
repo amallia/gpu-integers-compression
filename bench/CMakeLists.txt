@@ -7,6 +7,8 @@ foreach(BENCH_SRC ${BENCH_SOURCES})
         binary_packing
         FastPFor
         synthetic
+        gtest
+        gmock
     )
     target_include_directories(${BENCH_SRC_NAME} BEFORE PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
     )
@@ -19,5 +21,7 @@ CUDA_ADD_EXECUTABLE(cuda_bp_bench cuda_bp_bench.cu)
   benchmark
   binary_packing
   synthetic
+  gtest
+  gmock
 )
 endif()
