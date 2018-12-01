@@ -16,13 +16,14 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <cuda.h>
-
 #include "synthetic/uniform.hpp"
 #include "benchmark/benchmark.h"
 
-#include "bp/cuda_bp.cuh"
+#include "bp/cuda_copy.cuh"
 #include "bp/cuda_common.hpp"
+
+
+#include <cuda.h>
 
 __global__
 void warmUpGPU()
@@ -47,13 +48,10 @@ public:
 
     virtual void SetUp(::benchmark::State& st) {
         values = generate_random_vector(st.range(0));
-        encoded_values.resize(values.size() * 8);
-        auto compressedsize = cuda_bp::encode(encoded_values.data(), values.data(), values.size());
-        encoded_values.resize(compressedsize);
-        encoded_values.shrink_to_fit();
+        CUDA_CHECK_ERROR(cudaMallocHost((void**)&pinned_encoded, values.size() * sizeof(uint32_t)));
+        memcpy(pinned_encoded, values.data(), values.size() * sizeof(uint32_t));
 
         decoded_values.resize(values.size());
-
         CUDA_CHECK_ERROR(cudaSetDevice(3));
         warmUpGPU<<<1, 1>>>();
 
@@ -64,22 +62,22 @@ public:
         for (size_t i = 0; i < values.size(); ++i)
         {
             ASSERT_EQ(decoded_values[i], values[i]);
+
         }
         values.clear();
-        encoded_values.clear();
         decoded_values.clear();
     }
     std::vector<uint32_t> values;
-    std::vector<uint8_t> encoded_values;
+    uint32_t* pinned_encoded;
     std::vector<uint32_t> decoded_values;
 };
 
 
 BENCHMARK_DEFINE_F(RandomValuesFixture, decode)(benchmark::State& state) {
     while (state.KeepRunning()) {
-        cuda_bp::decode(decoded_values.data(), encoded_values.data(), decoded_values.size());
+        cuda_copy::decode(decoded_values.data(), reinterpret_cast<uint8_t*>(pinned_encoded), decoded_values.size());
     }
-    auto bpi = double(8*encoded_values.size())/decoded_values.size();
+    auto bpi = 32;
     state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);
 }
 BENCHMARK_REGISTER_F(RandomValuesFixture, decode)->Range(1ULL<<14, 1ULL<<28);

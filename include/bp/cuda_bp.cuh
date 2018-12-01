@@ -27,6 +27,7 @@
 
 #include "bit_stream/bit_istream.hpp"
 #include "bit_stream/bit_ostream.hpp"
+#include "bp/cuda_common.hpp"
 
 namespace cuda_bp {
 
@@ -190,37 +191,19 @@ void decode(uint32_t *out, const uint8_t *in, size_t bit, size_t n)
  *  - call decode kernel
  */
 static void decode(uint32_t *out, const uint8_t *in, size_t n) {
-  cudaSetDevice(3);
-
   bit_istream br(in);
   auto header_len = br.read(32);
   auto payload_len = br.read(32);
   const uint8_t * payload = in + header_len + 8;
   uint8_t *d_payload;
-  cudaMalloc((void **)&d_payload, payload_len * sizeof(uint8_t));
-  cudaMemcpy(d_payload, payload, payload_len * sizeof(uint8_t), cudaMemcpyHostToDevice);
+  CUDA_CHECK_ERROR(cudaMalloc((void **)&d_payload, payload_len * sizeof(uint8_t)));
+  CUDA_CHECK_ERROR(cudaMemcpy(d_payload, payload, payload_len * sizeof(uint8_t), cudaMemcpyHostToDevice));
 
   uint32_t *d_decoded;
-  cudaMalloc((void **)&d_decoded, n * sizeof(uint32_t));
+  CUDA_CHECK_ERROR(cudaMalloc((void **)&d_decoded, n * sizeof(uint32_t)));
 
   auto decoded = 0;
   auto skip = 0;
-
-  // std::cerr << header_len << std::endl;;
-
-  // std::cerr << size_t(reinterpret_cast<const uint8_t*>(payload));
-
-  // std::cerr << size_t(reinterpret_cast<const uint8_t*>(payload));
-
-  // std::cerr << " " ;
-  // std::cerr << size_t(reinterpret_cast<const uint64_t*>(in));
-  // std::cerr << " " ;
-
-  // printBinary(*(reinterpret_cast<const uint64_t*>(payload)));
-  // printBinary(*(reinterpret_cast<const uint64_t*>(payload)+1));
-  // printBinary(*(reinterpret_cast<const uint64_t*>(payload)+2));
-
-
 
   while (n - decoded >= 32) {
     // auto bit = br.read_unary();
@@ -237,7 +220,7 @@ static void decode(uint32_t *out, const uint8_t *in, size_t n) {
   decode(out+decoded, payload + skip, bit, n-decoded);
 
 
-  cudaMemcpy(out, d_decoded, (n/32 *32) * sizeof(uint32_t), cudaMemcpyDeviceToHost);
+  CUDA_CHECK_ERROR(cudaMemcpy(out, d_decoded, (n/32 *32) * sizeof(uint32_t), cudaMemcpyDeviceToHost));
 
   cudaFree(d_payload);
   cudaFree(d_decoded);
