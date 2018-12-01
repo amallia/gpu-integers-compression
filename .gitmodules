@@ -10,3 +10,6 @@
 [submodule "external/synthetic"]
 	path = external/synthetic
 	url = https://github.com/amallia/synthetic.git
+[submodule "external/FastPFor"]
+	path = external/FastPFor
+	url = https://github.com/lemire/FastPFor.git
