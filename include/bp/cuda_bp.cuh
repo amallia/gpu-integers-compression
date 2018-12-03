@@ -23,6 +23,9 @@
 #include <numeric>
 #include <utility>
 #include <x86intrin.h>
+#include <thrust/device_ptr.h>
+#include <thrust/scan.h>
+#include <thrust/execution_policy.h>
 
 #include "bit_stream/bit_istream.hpp"
 #include "bit_stream/bit_ostream.hpp"
@@ -31,11 +34,6 @@
 namespace cuda_bp {
 
 namespace details {
-
-template <class T>
-__attribute__((const)) T *padTo32bits(T *inbyte) {
-    return reinterpret_cast<T *>((reinterpret_cast<uintptr_t>(inbyte) + 3) & ~3);
-}
 
 static inline size_t bits(const size_t v) { return v == 0 ? 0 : 64 - __builtin_clzll(v); }
 
@@ -46,7 +44,7 @@ size_t size_align8(size_t size) { return (size + 8ULL - 1) & ~(8ULL - 1); }
 /*
  * Format:
  * _______________________________________________________________________________
- * | Payload begin (32-bit) | Payload length (32-bit) | Header (unary) | Payload |
+ * | Payload begin (32-bit) | Payload length (32-bit) | Header (8-bit) | Payload |
  * -------------------------------------------------------------------------------
  * IDEA: fixed 8 bits unary encoded words for the bit-length.
  * popcount 8bit https://stackoverflow.com/questions/17518774/sse-4-popcount-for-16-8-bit-values
@@ -120,9 +118,9 @@ __device__ uint32_t extract(const uint32_t *in, size_t index, size_t bit) {
                                << (bit - lastBitInPackedOverflow - 1);
     return outFromPacked | outFromOverflow;
 }
-__global__ void kernel_decode(uint32_t *out, const uint32_t *in, uint8_t* bit_sizes, uint32_t* offsets) {
+__global__ void kernel_decode(uint32_t *out, const uint32_t *in, uint32_t* bit_sizes, uint32_t* offsets) {
     size_t index = blockIdx.x * blockDim.x + threadIdx.x;
-    uint8_t bit_size = bit_sizes[blockIdx.x];
+    uint32_t bit_size = bit_sizes[blockIdx.x];
     uint32_t offset = offsets[blockIdx.x];
     out[index] = extract(in+offset, threadIdx.x, bit_size);
 }
@@ -134,13 +132,6 @@ void decode(uint32_t *out, const uint8_t *in, size_t bit, size_t n) {
     }
 }
 
-/*
- * Procedure:
- *  - Read offsets
- *  - Transfer payload to GPU
- *  - Read header
- *  - call decode kernel
- */
 static void decode(uint32_t *out, const uint8_t *in, size_t n) {
     bit_istream    br(in);
     auto           header_len  = br.read(32);
@@ -157,27 +148,28 @@ static void decode(uint32_t *out, const uint8_t *in, size_t n) {
     auto decoded = 0;
     auto skip    = 0;
 
-    std::vector<uint8_t> bit_sizes;
-    std::vector<uint32_t> offsets;
+    std::vector<uint32_t> bit_sizes;
     while (n - decoded >= 32) {
         auto bit = br.read(8);
         bit_sizes.push_back(bit);
-        offsets.push_back(skip);
         skip +=  bit;
         decoded += 32;
     }
-    uint8_t *      d_bit_sizes;
+    uint32_t *      d_bit_sizes;
     uint32_t *     d_offsets;
-    CUDA_CHECK_ERROR(cudaMalloc((void **)&d_bit_sizes, n/32 * sizeof(uint8_t)));
+    CUDA_CHECK_ERROR(cudaMalloc((void **)&d_bit_sizes, n/32 * sizeof(uint32_t)));
     CUDA_CHECK_ERROR(cudaMalloc((void **)&d_offsets,   n/32 * sizeof(uint32_t)));
     CUDA_CHECK_ERROR(
-        cudaMemcpy(d_bit_sizes, bit_sizes.data(), bit_sizes.size() * sizeof(uint8_t), cudaMemcpyHostToDevice));
-    CUDA_CHECK_ERROR(
-        cudaMemcpy(d_offsets, offsets.data(), offsets.size() * sizeof(uint32_t), cudaMemcpyHostToDevice));
+        cudaMemcpy(d_bit_sizes, bit_sizes.data(), bit_sizes.size() * sizeof(uint32_t), cudaMemcpyHostToDevice));
+
+
+    thrust::device_ptr<uint32_t> dp_bit_sizes(d_bit_sizes);
+    thrust::device_ptr<uint32_t> dp_offsets(d_offsets);
+    thrust::exclusive_scan(dp_bit_sizes, dp_bit_sizes+bit_sizes.size(), dp_offsets);
+
 
     kernel_decode<<<n/32, 32>>>(d_decoded, reinterpret_cast<const uint32_t *>(d_payload), d_bit_sizes, d_offsets);
 
-    // auto bit = br.read_unary();
     auto bit = br.read(8);
     decode(out + decoded, payload + skip, bit, n - decoded);
 
