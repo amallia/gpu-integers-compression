@@ -47,6 +47,8 @@ public:
 
     virtual void SetUp(::benchmark::State& st) {
         values = generate_random_vector(st.range(0));
+        std::sort(values.begin(), values.end());
+
         encoded_values.resize(values.size() * 8);
         auto compressedsize = cuda_bp::encode(encoded_values.data(), values.data(), values.size());
         encoded_values.resize(compressedsize);
@@ -77,7 +79,7 @@ public:
 
 BENCHMARK_DEFINE_F(RandomValuesFixture, decode)(benchmark::State& state) {
     while (state.KeepRunning()) {
-        cuda_bp::decode(decoded_values.data(), encoded_values.data(), decoded_values.size());
+        // cuda_bp::decode(decoded_values.data(), encoded_values.data(), decoded_values.size());
     }
     auto bpi = double(8*encoded_values.size())/decoded_values.size();
     state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);
