@@ -18,6 +18,7 @@
 #include <gtest/gtest.h>
 #include "benchmark/benchmark.h"
 #include "../external/FastPFor/headers/codecfactory.h"
+#include "bp/utils.hpp"
 
 
 class RandomValuesFixture : public ::benchmark::Fixture {
@@ -39,8 +40,10 @@ public:
         using namespace FastPForLib;
 
         IntegerCODEC &codec = *CODECFactory::getFromName("BP32");
-
         values = generate_random_vector(st.range(0));
+        std::sort(values.begin(), values.end());
+        utils::delta_encode(values.data(), values.size());
+
         encoded_values.resize(values.size() * 8);
         size_t compressedsize = 0;
         codec.encodeArray(values.data(), values.size(), encoded_values.data(),
@@ -76,7 +79,7 @@ BENCHMARK_DEFINE_F(RandomValuesFixture, decode)(benchmark::State& state) {
           codec.decodeArray(encoded_values.data(), encoded_values.size(),
                     decoded_values.data(), recoveredsize);
     }
-    auto bpi = double(8*encoded_values.size())/decoded_values.size();
+    auto bpi = double(32*encoded_values.size())/decoded_values.size();
     state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);
 }
 BENCHMARK_REGISTER_F(RandomValuesFixture, decode)->Range(1ULL<<14, 1ULL<<28);

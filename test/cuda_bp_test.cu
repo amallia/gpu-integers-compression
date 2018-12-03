@@ -24,9 +24,9 @@
 using namespace ::testing;
 
 TEST(cuda_bp, random) {
-    auto n   = 64;
+    auto n   = 1UL<<14;
     auto min = 1;
-    auto max = 66;
+    auto max = 1UL<<28;
 
     std::vector<uint32_t> values = synthetic::uniform(n, min, max);
     // std::vector<uint32_t> values = {1, 3, 5, 6};
@@ -43,7 +43,6 @@ TEST(cuda_bp, random) {
 
     EXPECT_EQ(decoded_values.size(), values.size());
     for (size_t i = 0; i < values.size(); ++i) {
-        // std::cerr<<decoded_values[i] << " aa "<<values[i]<<std::endl;
         EXPECT_EQ(decoded_values[i], values[i]);
     }
 }
