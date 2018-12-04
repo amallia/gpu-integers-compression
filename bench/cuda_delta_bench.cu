@@ -55,17 +55,24 @@ public:
         encoded_values.shrink_to_fit();
 
         decoded_values.resize(values.size());
-        CUDA_CHECK_ERROR(cudaSetDevice(3));
+        CUDA_CHECK_ERROR(cudaSetDevice(0));
+        CUDA_CHECK_ERROR(cudaMalloc((void **)&d_encoded, values.size() * sizeof(uint32_t)));
+        CUDA_CHECK_ERROR(cudaMemcpy(d_encoded, encoded_values.data(), values.size() * sizeof(uint32_t), cudaMemcpyHostToDevice));
+
+        CUDA_CHECK_ERROR(cudaMalloc((void **)&d_decoded, values.size() * sizeof(uint32_t)));
         warmUpGPU<<<1, 1>>>();
     }
 
     virtual void TearDown(::benchmark::State&) {
+        CUDA_CHECK_ERROR(cudaMemcpy(decoded_values.data(), d_decoded, values.size() * sizeof(uint32_t), cudaMemcpyDeviceToHost));
+
         ASSERT_EQ(decoded_values.size(), values.size());
         for (size_t i = 0; i < values.size(); ++i)
         {
             ASSERT_EQ(decoded_values[i], values[i]);
-
         }
+        CUDA_CHECK_ERROR(cudaFree(d_encoded));
+        CUDA_CHECK_ERROR(cudaFree(d_decoded));
         values.clear();
         encoded_values.clear();
         decoded_values.clear();
@@ -73,12 +80,15 @@ public:
     std::vector<uint32_t> values;
     std::vector<uint8_t> encoded_values;
     std::vector<uint32_t> decoded_values;
+    uint8_t *  d_encoded;
+    uint32_t * d_decoded;
+
 };
 
 
 BENCHMARK_DEFINE_F(RandomValuesFixture, decode)(benchmark::State& state) {
     while (state.KeepRunning()) {
-        cuda_delta::decode(decoded_values.data(), encoded_values.data(), decoded_values.size());
+        cuda_delta::decode(d_decoded, reinterpret_cast<uint8_t*>(d_encoded), decoded_values.size());
     }
     auto bpi = 32;
     state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);

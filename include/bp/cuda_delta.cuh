@@ -41,19 +41,10 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
   return n * sizeof(uint32_t);
 }
 
-static void decode(uint32_t *out, const uint8_t *in, size_t n) {
-
-  uint32_t *d_in;
-  CUDA_CHECK_ERROR(cudaMalloc((void **)&d_in, n * sizeof(uint32_t)));
-  CUDA_CHECK_ERROR(cudaMemcpy(d_in, in, n* sizeof(uint32_t), cudaMemcpyHostToDevice));
-
-  thrust::device_ptr<uint32_t> dp_in(d_in);
-
-  thrust::inclusive_scan(dp_in, dp_in+n, dp_in);
-
-  CUDA_CHECK_ERROR(cudaMemcpy(out, d_in, n * sizeof(uint32_t), cudaMemcpyDeviceToHost));
-
-  CUDA_CHECK_ERROR(cudaFree(d_in));
+static void decode(uint32_t *d_out, const uint8_t *d_in, size_t n) {
+  thrust::device_ptr<const uint32_t> dp_in(reinterpret_cast<const uint32_t*>(d_in));
+  thrust::device_ptr<uint32_t> dp_out(d_out);
+  thrust::inclusive_scan(dp_in, dp_in+n, dp_out);
 }
 
 
