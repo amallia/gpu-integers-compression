@@ -84,7 +84,7 @@ __host__ __device__ void printBinary(unsigned long long myNumber) {
     printf("\n");
 }
 
-__device__ inline uint32_t extract(const uint32_t *in, size_t index, size_t bit) {
+__device__ uint32_t extract(const uint32_t *in, size_t index, size_t bit) {
     int      firstBit                = bit * index;
     int      lastBit                 = firstBit + bit - 1;
     uint32_t packed                  = in[firstBit / 32];
@@ -111,19 +111,9 @@ __global__ void kernel_extract_bits(uint32_t *out, const uint32_t *in, size_t n)
 __global__ void kernel_decode(uint32_t *out, const uint32_t *in, size_t n,  const uint8_t* bit_sizes, uint32_t* offsets) {
     size_t index = blockIdx.x * blockDim.x + threadIdx.x;
     if(index < n) {
-        __shared__ uint8_t s_bit_size;
-        __shared__ uint32_t s_data[32];
-
-        if(threadIdx.x == 0) {
-            s_bit_size = bit_sizes[blockIdx.x];
-            __const__ uint32_t c_offset = offsets[blockIdx.x];
-            for (int i = 0; i < s_bit_size; ++i)
-            {
-                s_data[i] = *(in+c_offset+i);
-            }
-        }
-        __syncthreads();
-      out[index] = extract(s_data, threadIdx.x, s_bit_size);
+      uint8_t bit_size = bit_sizes[blockIdx.x];
+      uint32_t offset = offsets[blockIdx.x];
+      out[index] = extract(in+offset, threadIdx.x, bit_size);
     }
 }
 
