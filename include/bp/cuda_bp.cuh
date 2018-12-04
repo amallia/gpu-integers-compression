@@ -73,8 +73,7 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
 
     // auto header_len = round_up_div(details::size_align8(bits_sum + bits.size()), 8);
     auto header_len = bits.size();
-    bw.write(header_len, 32);
-    bw.write(offset, 32);
+    // bw.write(offset, 32);
     for (auto b : bits) {
         // bw.write_unary(b);
         bw.write(b, 8);
@@ -88,7 +87,7 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
     }
 
     // std::cerr << 8 + header_len + offset << std::endl;
-    return 8 + header_len + offset;
+    return  header_len + offset;
 }
 
 __host__ __device__ void printBinary(unsigned long long myNumber) {
@@ -118,66 +117,47 @@ __device__ uint32_t extract(const uint32_t *in, size_t index, size_t bit) {
                                << (bit - lastBitInPackedOverflow - 1);
     return outFromPacked | outFromOverflow;
 }
-__global__ void kernel_decode(uint32_t *out, const uint32_t *in, uint32_t* bit_sizes, uint32_t* offsets) {
+
+__global__ void kernel_extract_bits(uint32_t *out, const uint32_t *in, size_t n) {
     size_t index = blockIdx.x * blockDim.x + threadIdx.x;
-    uint32_t bit_size = bit_sizes[blockIdx.x];
-    uint32_t offset = offsets[blockIdx.x];
-    out[index] = extract(in+offset, threadIdx.x, bit_size);
-}
-
-void decode(uint32_t *out, const uint8_t *in, size_t bit, size_t n) {
-    bit_istream br(in);
-    for (size_t i = 0; i < n; ++i) {
-        out[i] = br.read(bit);
+    if(index < n) {
+      uint32_t bit_size = 8;
+      uint32_t offset = blockIdx.x * 8;
+      out[index] = extract(in+offset, threadIdx.x, bit_size);
     }
 }
 
-static void decode(uint32_t *out, const uint8_t *in, size_t n) {
-    bit_istream    br(in);
-    auto           header_len  = br.read(32);
-    auto           payload_len = br.read(32);
-    const uint8_t *payload     = in + header_len + 8;
-    uint8_t *      d_payload;
-    CUDA_CHECK_ERROR(cudaMalloc((void **)&d_payload, payload_len * sizeof(uint8_t)));
-    CUDA_CHECK_ERROR(
-        cudaMemcpy(d_payload, payload, payload_len * sizeof(uint8_t), cudaMemcpyHostToDevice));
-
-    uint32_t *d_decoded;
-    CUDA_CHECK_ERROR(cudaMalloc((void **)&d_decoded, n * sizeof(uint32_t)));
-
-    auto decoded = 0;
-    auto skip    = 0;
-
-    std::vector<uint32_t> bit_sizes;
-    while (n - decoded >= 32) {
-        auto bit = br.read(8);
-        bit_sizes.push_back(bit);
-        skip +=  bit;
-        decoded += 32;
+__global__ void kernel_decode(uint32_t *out, const uint32_t *in, size_t n,  const uint8_t* bit_sizes, uint32_t* offsets) {
+    size_t index = blockIdx.x * blockDim.x + threadIdx.x;
+    if(index < n) {
+      uint8_t bit_size = bit_sizes[blockIdx.x];
+      uint32_t offset = offsets[blockIdx.x];
+      out[index] = extract(in+offset, threadIdx.x, bit_size);
     }
-    uint32_t *      d_bit_sizes;
+}
+
+
+static void decode(uint32_t *d_out, const uint8_t *d_in, size_t n) {
+    size_t           header_len  = ceil(n/32);
+
+
+    uint32_t *      d_bits_extr;
+    CUDA_CHECK_ERROR(cudaMalloc((void **)&d_bits_extr, ceil(n/32) * sizeof(uint32_t)));
+
     uint32_t *     d_offsets;
-    CUDA_CHECK_ERROR(cudaMalloc((void **)&d_bit_sizes, n/32 * sizeof(uint32_t)));
-    CUDA_CHECK_ERROR(cudaMalloc((void **)&d_offsets,   n/32 * sizeof(uint32_t)));
-    CUDA_CHECK_ERROR(
-        cudaMemcpy(d_bit_sizes, bit_sizes.data(), bit_sizes.size() * sizeof(uint32_t), cudaMemcpyHostToDevice));
+    CUDA_CHECK_ERROR(cudaMalloc((void **)&d_offsets,   ceil(n/32) * sizeof(uint32_t)));
 
+    kernel_extract_bits<<<ceil(n/32/32), 32>>>(d_bits_extr, reinterpret_cast<const uint32_t *>(d_in), ceil(n/32));
 
-    thrust::device_ptr<uint32_t> dp_bit_sizes(d_bit_sizes);
+    thrust::device_ptr<uint32_t> dp_bit_sizes(d_bits_extr);
     thrust::device_ptr<uint32_t> dp_offsets(d_offsets);
-    thrust::exclusive_scan(dp_bit_sizes, dp_bit_sizes+bit_sizes.size(), dp_offsets);
+    thrust::exclusive_scan(dp_bit_sizes, dp_bit_sizes+ceil(n/32), dp_offsets);
 
+    const uint8_t *      d_payload = d_in + header_len;
+    kernel_decode<<<ceil(n/32), 32>>>(d_out, reinterpret_cast<const uint32_t *>(d_payload), n, d_in, d_offsets);
+    cudaFree(d_bits_extr);
+    cudaFree(d_offsets);
 
-    kernel_decode<<<n/32, 32>>>(d_decoded, reinterpret_cast<const uint32_t *>(d_payload), d_bit_sizes, d_offsets);
-
-    auto bit = br.read(8);
-    decode(out + decoded, payload + skip, bit, n - decoded);
-
-    CUDA_CHECK_ERROR(
-        cudaMemcpy(out, d_decoded, (n / 32 * 32) * sizeof(uint32_t), cudaMemcpyDeviceToHost));
-
-    cudaFree(d_payload);
-    cudaFree(d_decoded);
 }
 
 } // namespace cuda_bp
