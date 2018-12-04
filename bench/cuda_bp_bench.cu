@@ -57,7 +57,7 @@ public:
         encoded_values.shrink_to_fit();
 
         decoded_values.resize(values.size());
-        CUDA_CHECK_ERROR(cudaSetDevice(3));
+        CUDA_CHECK_ERROR(cudaSetDevice(0));
         warmUpGPU<<<1, 1>>>();
         CUDA_CHECK_ERROR(cudaMalloc((void **)&d_encoded, encoded_values.size() * sizeof(uint8_t)));
         CUDA_CHECK_ERROR(cudaMemcpy(d_encoded, encoded_values.data(), encoded_values.size() * sizeof(uint8_t), cudaMemcpyHostToDevice));

@@ -43,14 +43,11 @@ size_t size_align8(size_t size) { return (size + 8ULL - 1) & ~(8ULL - 1); }
 
 /*
  * Format:
- * _______________________________________________________________________________
- * | Payload begin (32-bit) | Payload length (32-bit) | Header (8-bit) | Payload |
- * -------------------------------------------------------------------------------
- * IDEA: fixed 8 bits unary encoded words for the bit-length.
- * popcount 8bit https://stackoverflow.com/questions/17518774/sse-4-popcount-for-16-8-bit-values
- * then lunch 16 kernels
- *
+ * __________________________________
+ * | Header (8-bit/value) | Payload |
+ * ----------------------------------
  */
+
 template <size_t block_size = 32>
 static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
     bit_ostream bw(out);
@@ -59,35 +56,19 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
     std::vector<size_t> bits(blocks, 0);
     for (size_t i = 0; i < n; ++i) {
         auto value = in[i];
-        // std::cerr << value << std::endl;
         auto bit = details::bits(value);
-        // std::cerr << value << " " << bit << std::endl;
         auto b  = i / block_size;
         bits[b] = std::max(bit, bits[b]);
     }
-    auto   bits_sum = std::accumulate(bits.begin(), std::prev(bits.end()), 0);
-    size_t offset   = bits_sum * block_size;
-    bits_sum += bits.back();
-    offset += bits.back() * ((n / block_size) * block_size + (n % block_size));
-    offset = round_up_div(details::size_align8(offset), 8);
-
-    // auto header_len = round_up_div(details::size_align8(bits_sum + bits.size()), 8);
-    auto header_len = bits.size();
-    // bw.write(offset, 32);
     for (auto b : bits) {
-        // bw.write_unary(b);
         bw.write(b, 8);
     }
-
-    // bw.write(0, details::size_align8(bits_sum + bits.size()) - bits_sum - bits.size());
     for (size_t i = 0; i < n; ++i) {
         auto value = in[i];
         auto b     = i / block_size;
         bw.write(value, bits[b]);
     }
-
-    // std::cerr << 8 + header_len + offset << std::endl;
-    return  header_len + offset;
+    return  ceil(bw.size()/8);
 }
 
 __host__ __device__ void printBinary(unsigned long long myNumber) {
