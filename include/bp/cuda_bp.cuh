@@ -111,14 +111,19 @@ __global__ void kernel_extract_bits(uint32_t *out, const uint32_t *in, size_t n)
 __global__ void kernel_decode(uint32_t *out, const uint32_t *in, size_t n,  const uint8_t* bit_sizes, uint32_t* offsets) {
     size_t index = blockIdx.x * blockDim.x + threadIdx.x;
     if(index < n) {
-        __shared__ uint8_t bit_size;
-        __shared__ uint32_t offset;
+        __shared__ uint8_t s_bit_size;
+        __shared__ uint32_t s_data[32];
+
         if(threadIdx.x == 0) {
-            bit_size = bit_sizes[blockIdx.x];
-            offset = offsets[blockIdx.x];
+            s_bit_size = bit_sizes[blockIdx.x];
+            __const__ uint32_t c_offset = offsets[blockIdx.x];
+            for (int i = 0; i < s_bit_size; ++i)
+            {
+                s_data[i] = *(in+c_offset+i);
+            }
         }
         __syncthreads();
-      out[index] = extract(in+offset, threadIdx.x, bit_size);
+      out[index] = extract(s_data, threadIdx.x, s_bit_size);
     }
 }
 
