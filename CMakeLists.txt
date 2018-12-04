@@ -49,7 +49,5 @@ target_include_directories(binary_packing INTERFACE
 target_link_libraries(binary_packing INTERFACE bit_stream)
 
 enable_testing()
-add_subdirectory(test)
-
 add_subdirectory(bench)
 
