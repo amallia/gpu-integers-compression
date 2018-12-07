@@ -41,7 +41,7 @@ void kernel_decode(uint32_t *out, const uint32_t *in, size_t limit)
 }
 
 static void decode(uint32_t *d_out, const uint8_t *d_in, size_t n) {
-  kernel_decode<<<ceil(n/32), 32>>>(d_out, reinterpret_cast<const uint32_t*>(d_in), n);
+  kernel_decode<<<ceil(n/512), 512>>>(d_out, reinterpret_cast<const uint32_t*>(d_in), n);
 }
 
 } // namespace cuda_bp
