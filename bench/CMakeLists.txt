@@ -24,6 +24,14 @@ CUDA_ADD_EXECUTABLE(cuda_bp_bench cuda_bp_bench.cu)
   gtest
   gmock
 )
+CUDA_ADD_EXECUTABLE(cuda_vbyte_bench cuda_vbyte_bench.cu)
+  target_link_libraries(cuda_vbyte_bench
+  benchmark
+  binary_packing
+  synthetic
+  gtest
+  gmock
+)
 CUDA_ADD_EXECUTABLE(cuda_copy_bench cuda_copy_bench.cu)
   target_link_libraries(cuda_copy_bench
   benchmark
