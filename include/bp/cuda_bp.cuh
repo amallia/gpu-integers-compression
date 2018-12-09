@@ -71,19 +71,6 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
     return  ceil(bw.size()/8);
 }
 
-__host__ __device__ void printBinary(unsigned long long myNumber) {
-    int numberOfBits = sizeof(unsigned long long) * 8;
-    for (int i = numberOfBits - 1; i >= 0; i--) {
-        bool isBitSet = (myNumber & (1ULL << i));
-        if (isBitSet) {
-            printf("1");
-        } else {
-            printf("0");
-        }
-    }
-    printf("\n");
-}
-
 __device__ uint32_t extract(const uint32_t *in, size_t index, size_t bit) {
     int      firstBit                = bit * index;
     int      lastBit                 = firstBit + bit - 1;
