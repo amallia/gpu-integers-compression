@@ -98,19 +98,6 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
     return offset_len;
 }
 
-__host__ __device__ void printBinary(unsigned long long myNumber) {
-    int numberOfBits = sizeof(unsigned long long) * 8;
-    for (int i = numberOfBits - 1; i >= 0; i--) {
-        bool isBitSet = (myNumber & (1ULL << i));
-        if (isBitSet) {
-            printf("1");
-        } else {
-            printf("0");
-        }
-    }
-    printf("\n");
-}
-
 __device__ uint32_t extract2(const uint32_t *in, size_t index, uint32_t *offsets) {
     uint32_t offset = offsets[index];
     uint32_t bit =    offsets[index+1] - offsets[index];
@@ -160,9 +147,6 @@ __global__ void kernel_decode(
         {
             min_offsets[i] += min_offsets[i-1];
         }
-        // if(blockIdx.x == 1) {
-        //     printf("%d\n", offset);
-        //  }
     }
      __syncthreads();
     // // prefix_sum(min_offsets, min_offsets, blockIdx.x);
