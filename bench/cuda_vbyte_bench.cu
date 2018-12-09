@@ -19,7 +19,7 @@
 #include <cuda.h>
 #include "bp/utils.hpp"
 
-#include "synthetic/uniform.hpp"
+#include "../external/FastPFor/headers/synthetic.h"
 #include "benchmark/benchmark.h"
 
 #include "bp/cuda_vbyte.cuh"
@@ -31,10 +31,10 @@ void warmUpGPU()
   // do nothing
 }
 
-__host__ __device__ void printBinary(unsigned long long myNumber) {
-    int numberOfBits = sizeof(unsigned long long) * 8;
+__host__ __device__ void printBinary(unsigned myNumber) {
+    int numberOfBits = sizeof(unsigned) * 8;
     for (int i = numberOfBits - 1; i >= 0; i--) {
-        bool isBitSet = (myNumber & (1ULL << i));
+        bool isBitSet = (myNumber & (1U << i));
         if (isBitSet) {
             printf("1");
         } else {
@@ -44,55 +44,34 @@ __host__ __device__ void printBinary(unsigned long long myNumber) {
     printf("\n");
 }
 
-class RandomValuesFixture : public ::benchmark::Fixture {
-
-    static std::vector<uint32_t> generate_random_vector(size_t n) {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::vector<uint32_t> values(n);
-        std::uniform_int_distribution<> dis(uint32_t(0));
-        std::generate(values.begin(), values.end(), [&](){ return dis(gen); });
-        return values;
-    }
+class UniformValuesFixture : public ::benchmark::Fixture {
 
 public:
     using ::benchmark::Fixture::SetUp;
     using ::benchmark::Fixture::TearDown;
 
     virtual void SetUp(::benchmark::State& st) {
-        values = generate_random_vector(st.range(0));
-        std::sort(values.begin(), values.end());
+        using namespace FastPForLib;
+        UniformDataGenerator clu;
+        auto tmp = clu.generateUniform(st.range(0), 1U << 29);
+        values = std::vector<uint32_t>(tmp.begin(), tmp.end());
         utils::delta_encode(values.data(), values.size());
 
         encoded_values.resize(values.size() * 8);
         auto compressedsize = cuda_vbyte::encode(encoded_values.data(), values.data(), values.size());
-
-        bit_istream br(encoded_values.data());
-
-        // std::cerr << br.read(32) << std::endl;
-        // auto b = br.read(2);
-        // std::cerr << b << std::endl;
-        // std::cerr << br.read(2) << std::endl;
-        // std::cerr << br.read(2) << std::endl;
-        // std::cerr << br.read(2) << std::endl;
-        // std::cerr << br.read(2) << std::endl;
-        // std::cerr << br.read(2) << std::endl;
-        // std::cerr << br.read(2) << std::endl;
-        // std::cerr << br.read(2) << std::endl;
-        // std::cerr << br.read(2) << std::endl;
-        // std::cerr << br.read(2) << std::endl;
-        // std::cerr << br.read(2) << std::endl;
-        // std::cerr << br.read(2) << std::endl;
-        // std::cerr << br.read(2) << std::endl;
-        // std::cerr << br.read(2) << std::endl;
-        // std::cerr << br.read(2) << std::endl;
-        // std::cerr << br.read(2) << std::endl;
-
-        // std::cerr << (b+1)*8 << std::endl;
-        // std::cerr << *(reinterpret_cast<uint32_t*>(encoded_values.data())) << std::endl;
-
         encoded_values.resize(compressedsize);
         encoded_values.shrink_to_fit();
+
+        // for (int i = 0; i < values.size(); ++i)
+        // {
+        //     std::cerr << values[i] << std::endl;
+        // }
+        // for (int i = 0; i < compressedsize/4; ++i)
+        // {
+        //     printBinary(*(reinterpret_cast<uint32_t*>(encoded_values.data())+i));
+        // }
+        // std::cerr << "============================================" << std::endl;
+        // exit(1);
 
         decoded_values.resize(values.size());
         CUDA_CHECK_ERROR(cudaSetDevice(0));
@@ -112,6 +91,7 @@ public:
         {
             ASSERT_EQ(decoded_values[i], values[i]);
         }
+
         cudaFree(d_encoded);
         cudaFree(d_decoded);
         values.clear();
@@ -126,13 +106,13 @@ public:
 };
 
 
-BENCHMARK_DEFINE_F(RandomValuesFixture, decode)(benchmark::State& state) {
+BENCHMARK_DEFINE_F(UniformValuesFixture, decode)(benchmark::State& state) {
     while (state.KeepRunning()) {
         cuda_vbyte::decode(d_decoded, d_encoded, decoded_values.size());
     }
     auto bpi = double(8*encoded_values.size())/decoded_values.size();
     state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);
 }
-BENCHMARK_REGISTER_F(RandomValuesFixture, decode)->Range(1ULL<<4, 1ULL<<4);
+BENCHMARK_REGISTER_F(UniformValuesFixture, decode)->RangeMultiplier(2)->Range((1ULL << 15), (1ULL<<27));
 
 BENCHMARK_MAIN();
