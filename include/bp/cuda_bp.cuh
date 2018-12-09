@@ -122,21 +122,16 @@ static void decode(uint32_t *d_out, const uint8_t *d_in, size_t n) {
     size_t           header_len  = ceil(n/32);
 
 
-    uint32_t *      d_bits_extr;
-    CUDA_CHECK_ERROR(cudaMalloc((void **)&d_bits_extr, ceil(n/32) * sizeof(uint32_t)));
-
     uint32_t *     d_offsets;
     CUDA_CHECK_ERROR(cudaMalloc((void **)&d_offsets,   ceil(n/32) * sizeof(uint32_t)));
 
-    kernel_extract_bits<<<ceil(n/32/32), 32>>>(d_bits_extr, reinterpret_cast<const uint32_t *>(d_in), ceil(n/32));
+    kernel_extract_bits<<<ceil(n/32/32), 32>>>(d_offsets, reinterpret_cast<const uint32_t *>(d_in), ceil(n/32));
 
-    thrust::device_ptr<uint32_t> dp_bit_sizes(d_bits_extr);
     thrust::device_ptr<uint32_t> dp_offsets(d_offsets);
-    thrust::exclusive_scan(dp_bit_sizes, dp_bit_sizes+ceil(n/32), dp_offsets);
+    thrust::exclusive_scan(dp_offsets, dp_offsets+ceil(n/32), dp_offsets);
 
     const uint8_t *      d_payload = d_in + header_len;
     kernel_decode<<<ceil(n/32), 32>>>(d_out, reinterpret_cast<const uint32_t *>(d_payload), n, d_in, d_offsets);
-    cudaFree(d_bits_extr);
     cudaFree(d_offsets);
 
 }
