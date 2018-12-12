@@ -18,7 +18,7 @@
 #include <gtest/gtest.h>
 #include "benchmark/benchmark.h"
 #include "../external/FastPFor/headers/codecfactory.h"
-#include "../external/FastPFor/headers/synthetic.h"
+#include "synthetic.hpp"
 #include "bp/utils.hpp"
 
 
@@ -39,11 +39,12 @@ public:
 
     virtual void SetUp(::benchmark::State& st) {
         using namespace FastPForLib;
+        using namespace gpu_ic;
 
         IntegerCODEC &codec = *CODECFactory::getFromName("simdbinarypacking");
 
         UniformDataGenerator clu;
-        auto tmp = clu.generateUniform(st.range(0), 1U << 29);
+        auto tmp = clu.generate(st.range(0), 1U << 29);
         values = std::vector<uint32_t>(tmp.begin(), tmp.end());
         utils::delta_encode(values.data(), values.size());
 
@@ -89,11 +90,12 @@ public:
 
     virtual void SetUp(::benchmark::State& st) {
         using namespace FastPForLib;
+        using namespace gpu_ic;
 
         IntegerCODEC &codec = *CODECFactory::getFromName("simdbinarypacking");
 
         ClusteredDataGenerator clu;
-        auto tmp = clu.generateClustered(st.range(0), 1U << 29);
+        auto tmp = clu.generate(st.range(0), 1U << 29);
         values = std::vector<uint32_t>(tmp.begin(), tmp.end());
         utils::delta_encode(values.data(), values.size());
 

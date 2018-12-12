@@ -32,14 +32,6 @@
 
 namespace cuda_vbyte {
 
-namespace details {
-
-static inline size_t bits(const size_t v) { return v == 0 ? 0 : 64 - __builtin_clzll(v); }
-
-size_t size_align8(size_t size) { return (size + 8ULL - 1) & ~(8ULL - 1); }
-
-} // namespace details
-
 
 template <size_t block_size = 32>
 static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {

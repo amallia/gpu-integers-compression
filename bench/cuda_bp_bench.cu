@@ -20,7 +20,7 @@
 
 #include "benchmark/benchmark.h"
 
-#include "../external/FastPFor/headers/synthetic.h"
+#include "synthetic.hpp"
 #include "bp/cuda_bp.cuh"
 #include "bp/cuda_common.hpp"
 #include "bp/utils.hpp"
@@ -38,10 +38,10 @@ public:
     using ::benchmark::Fixture::TearDown;
 
     virtual void SetUp(::benchmark::State& st) {
-        using namespace FastPForLib;
+        using namespace gpu_ic;
+
         UniformDataGenerator clu;
-        auto tmp = clu.generateUniform(st.range(0), 1U << 29);
-        values = std::vector<uint32_t>(tmp.begin(), tmp.end());
+        values = clu.generate(st.range(0), 1U << 29);
         utils::delta_encode(values.data(), values.size());
 
         encoded_values.resize(values.size() * 8);
@@ -87,10 +87,10 @@ public:
     using ::benchmark::Fixture::TearDown;
 
     virtual void SetUp(::benchmark::State& st) {
-        using namespace FastPForLib;
+        using namespace gpu_ic;
+
         ClusteredDataGenerator clu;
-        auto tmp = clu.generateClustered(st.range(0), 1U << 29);
-        values = std::vector<uint32_t>(tmp.begin(), tmp.end());
+        values = clu.generate(st.range(0), 1U << 29);
         utils::delta_encode(values.data(), values.size());
 
         encoded_values.resize(values.size() * 8);

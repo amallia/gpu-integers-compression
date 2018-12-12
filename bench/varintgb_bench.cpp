@@ -18,20 +18,12 @@
 #include <gtest/gtest.h>
 #include "benchmark/benchmark.h"
 #include "../external/FastPFor/headers/codecfactory.h"
-#include "../external/FastPFor/headers/synthetic.h"
 #include "bp/utils.hpp"
+
+#include "synthetic.hpp"
 
 
 class UniformValuesFixture : public ::benchmark::Fixture {
-
-    static std::vector<uint32_t> generate_random_vector(size_t n) {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::vector<uint32_t> values(n);
-        std::uniform_int_distribution<> dis(uint32_t(0));
-        std::generate(values.begin(), values.end(), [&](){ return dis(gen); });
-        return values;
-    }
 
 public:
     using ::benchmark::Fixture::SetUp;
@@ -39,12 +31,12 @@ public:
 
     virtual void SetUp(::benchmark::State& st) {
         using namespace FastPForLib;
+        using namespace gpu_ic;
 
         IntegerCODEC &codec = *CODECFactory::getFromName("varintgb");
 
         UniformDataGenerator clu;
-        auto tmp = clu.generateUniform(st.range(0), 1U << 29);
-        values = std::vector<uint32_t>(tmp.begin(), tmp.end());
+        values = clu.generate(st.range(0), 1U << 29);
         utils::delta_encode(values.data(), values.size());
 
         encoded_values.resize(values.size() * 8);
@@ -74,27 +66,17 @@ public:
 
 class ClusteredValuesFixture : public ::benchmark::Fixture {
 
-    static std::vector<uint32_t> generate_random_vector(size_t n) {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::vector<uint32_t> values(n);
-        std::uniform_int_distribution<> dis(uint32_t(0));
-        std::generate(values.begin(), values.end(), [&](){ return dis(gen); });
-        return values;
-    }
-
 public:
     using ::benchmark::Fixture::SetUp;
     using ::benchmark::Fixture::TearDown;
 
     virtual void SetUp(::benchmark::State& st) {
         using namespace FastPForLib;
-
+        using namespace gpu_ic;
         IntegerCODEC &codec = *CODECFactory::getFromName("varintgb");
 
         ClusteredDataGenerator clu;
-        auto tmp = clu.generateClustered(st.range(0), 1U << 29);
-        values = std::vector<uint32_t>(tmp.begin(), tmp.end());
+        values = clu.generate(st.range(0), 1U << 29);
         utils::delta_encode(values.data(), values.size());
 
         encoded_values.resize(values.size() * 8);

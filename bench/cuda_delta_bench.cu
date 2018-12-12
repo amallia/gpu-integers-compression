@@ -16,12 +16,12 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "synthetic/uniform.hpp"
 #include "benchmark/benchmark.h"
 
 #include "bp/cuda_common.hpp"
 #include "bp/cuda_delta.cuh"
 
+#include "bp/utils.hpp"
 
 #include <cuda.h>
 
@@ -49,10 +49,8 @@ public:
     virtual void SetUp(::benchmark::State& st) {
         values = generate_random_vector(st.range(0));
         std::sort(values.begin(), values.end());
-        encoded_values.resize(values.size()*sizeof(uint32_t));
-        auto compressedsize = cuda_delta::encode(encoded_values.data(), values.data(), values.size());
-        encoded_values.resize(compressedsize);
-        encoded_values.shrink_to_fit();
+        encoded_values = values;
+        utils::delta_encode(encoded_values.data(), encoded_values.size());
 
         decoded_values.resize(values.size());
         CUDA_CHECK_ERROR(cudaSetDevice(0));
@@ -78,7 +76,7 @@ public:
         decoded_values.clear();
     }
     std::vector<uint32_t> values;
-    std::vector<uint8_t> encoded_values;
+    std::vector<uint32_t> encoded_values;
     std::vector<uint32_t> decoded_values;
     uint8_t *  d_encoded;
     uint32_t * d_decoded;

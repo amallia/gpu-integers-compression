@@ -1,3 +1,3 @@
-# Binary Packing 
+# GPU Integers Compression
 
-[![Build Status](https://travis-ci.org/amallia/binary_packing.svg?branch=master)](https://travis-ci.org/amallia/binary_packing)
+GPU-Accelerated Faster Decoding of Integer Lists

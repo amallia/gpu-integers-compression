@@ -16,7 +16,6 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "synthetic/uniform.hpp"
 #include "benchmark/benchmark.h"
 
 #include "bp/cuda_copy.cuh"
