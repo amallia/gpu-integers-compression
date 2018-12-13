@@ -46,7 +46,7 @@ add_library(binary_packing INTERFACE)
 target_include_directories(binary_packing INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
 )
-target_link_libraries(binary_packing INTERFACE bit_stream)
+target_link_libraries(binary_packing INTERFACE bit_stream cub)
 
 enable_testing()
 add_subdirectory(bench)

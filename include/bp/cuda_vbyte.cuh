@@ -26,6 +26,7 @@
 #include <thrust/scan.h>
 #include <utility>
 #include <x86intrin.h>
+#include "cub/cub.cuh"
 
 #include "bit_stream/bit_ostream.hpp"
 #include "bp/cuda_common.hpp"
@@ -134,14 +135,12 @@ __global__ void kernel_decode(
     min_offsets[threadIdx.x+1] = (extract(in + offset, threadIdx.x, 2)+1)*8;
      __syncthreads();
 
-    if(threadIdx.x == 0) {
-        for (int i = 1; i < 32+1; ++i)
-        {
-            min_offsets[i] += min_offsets[i-1];
-        }
-    }
-     __syncthreads();
-    // // prefix_sum(min_offsets, min_offsets, blockIdx.x);
+    typedef cub::BlockScan<uint32_t, 32> BlockScan;
+     __shared__ typename BlockScan::TempStorage temp_storage;
+      BlockScan(temp_storage)
+          .InclusiveSum(min_offsets[threadIdx.x+1], min_offsets[threadIdx.x+1]);
+    __syncthreads();
+
     if (index < n) {
         out[index] = extract2(in + offset + 2, threadIdx.x, min_offsets);
     }
