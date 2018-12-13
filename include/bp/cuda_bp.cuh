@@ -110,12 +110,12 @@ static void decode(uint32_t *d_out, const uint8_t *d_in, size_t n) {
 
 
     uint32_t *     d_offsets;
-    CUDA_CHECK_ERROR(cudaMalloc((void **)&d_offsets,   ceil(n/32) * sizeof(uint32_t)));
+    CUDA_CHECK_ERROR(cudaMalloc((void **)&d_offsets, header_len * sizeof(uint32_t)));
 
-    kernel_extract_bits<<<ceil(n/32/32), 32>>>(d_offsets, reinterpret_cast<const uint32_t *>(d_in), ceil(n/32));
+    kernel_extract_bits<<<ceil(header_len/32), 32>>>(d_offsets, reinterpret_cast<const uint32_t *>(d_in), header_len);
 
     thrust::device_ptr<uint32_t> dp_offsets(d_offsets);
-    thrust::exclusive_scan(dp_offsets, dp_offsets+ceil(n/32), dp_offsets);
+    thrust::exclusive_scan(dp_offsets, dp_offsets+header_len, dp_offsets);
 
     const uint8_t *      d_payload = d_in + header_len;
     kernel_decode<<<ceil(n/32), 32>>>(d_out, reinterpret_cast<const uint32_t *>(d_payload), n, d_in, d_offsets);
