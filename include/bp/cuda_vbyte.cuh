@@ -91,26 +91,8 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
     return offset_len;
 }
 
-__device__ uint32_t extract2(const uint32_t *in, size_t index, uint32_t *offsets) {
-    uint32_t offset = offsets[index];
-    uint32_t bit =    offsets[index+1] - offsets[index];
-
+__device__ uint32_t extract(const uint32_t *in, size_t offset, size_t bit) {
     int      firstBit                = offset;
-    int      lastBit                 = firstBit + bit - 1;
-    uint32_t packed                  = in[firstBit / 32];
-    int      firstBitInPacked        = firstBit % 32;
-    uint32_t packedOverflow          = in[lastBit / 32];
-    bool     isOverflowing           = lastBit % 32 < firstBitInPacked;
-    int      lastBitInPackedOverflow = !isOverflowing ? -1 : lastBit % 32;
-    uint32_t outFromPacked =
-        ((packed >> firstBitInPacked) & (0xFFFFFFFF >> (32 - (bit - lastBitInPackedOverflow - 1))));
-    uint32_t outFromOverflow = (packedOverflow & (0xFFFFFFFF >> (32 - lastBitInPackedOverflow - 1)))
-                               << (bit - lastBitInPackedOverflow - 1);
-    return outFromPacked | outFromOverflow;
-}
-
-__device__ uint32_t extract(const uint32_t *in, size_t index, size_t bit) {
-    int      firstBit                = bit * index;
     int      lastBit                 = firstBit + bit - 1;
     uint32_t packed                  = in[firstBit / 32];
     int      firstBitInPacked        = firstBit % 32;
@@ -132,7 +114,7 @@ __global__ void kernel_decode(
     uint32_t offset = offsets[blockIdx.x]/4;
     __shared__ uint32_t min_offsets[32+1];
 
-    min_offsets[threadIdx.x+1] = (extract(in + offset, threadIdx.x, 2)+1)*8;
+    min_offsets[threadIdx.x+1] = (extract(in + offset, threadIdx.x*2, 2)+1)*8;
      __syncthreads();
 
     typedef cub::BlockScan<uint32_t, 32> BlockScan;
@@ -142,7 +124,8 @@ __global__ void kernel_decode(
     __syncthreads();
 
     if (index < n) {
-        out[index] = extract2(in + offset + 2, threadIdx.x, min_offsets);
+        uint32_t bit =    min_offsets[threadIdx.x+1] - min_offsets[threadIdx.x];
+        out[index] = extract(in + offset + 2, min_offsets[threadIdx.x], bit);
     }
 }
 template <size_t block_size = 32>
