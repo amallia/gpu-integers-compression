@@ -53,7 +53,7 @@ public:
     virtual void SetUp(::benchmark::State& st) {
         using namespace gpu_ic;
 
-        UniformDataGenerator clu;
+        UniformDataGenerator clu(1);
         values = clu.generate(st.range(0), 1U << 29);
         utils::delta_encode(values.data(), values.size());
 
@@ -104,7 +104,7 @@ public:
     virtual void SetUp(::benchmark::State& st) {
         using namespace gpu_ic;
 
-        ClusteredDataGenerator clu;
+        ClusteredDataGenerator clu(1);
         values = clu.generate(st.range(0), 1U << 29);
         utils::delta_encode(values.data(), values.size());
 
@@ -194,3 +194,16 @@ BENCHMARK_MAIN();
 // UniformValuesFixture/decode/67108864     3217725 ns    3217787 ns      10000 bpi=12
 // UniformValuesFixture/decode/134217728    6428325 ns    6428410 ns      10000 bpi=12
 //
+// ClusteredValuesFixture/decode/32768           4385 ns       4385 ns     155782 bpi=17.3623
+// ClusteredValuesFixture/decode/65536           6081 ns       6081 ns     127130 bpi=18.9751
+// ClusteredValuesFixture/decode/131072          9462 ns       9462 ns      81318 bpi=18.1907
+// ClusteredValuesFixture/decode/262144         16409 ns      16409 ns      46482 bpi=17.158
+// ClusteredValuesFixture/decode/524288         29398 ns      29398 ns      25460 bpi=15.207
+// ClusteredValuesFixture/decode/1048576        52895 ns      52895 ns      10000 bpi=15.2155
+// ClusteredValuesFixture/decode/2097152       103668 ns     103666 ns      10000 bpi=14.364
+// ClusteredValuesFixture/decode/4194304       202812 ns     202815 ns      10000 bpi=12.8403
+// ClusteredValuesFixture/decode/8388608       404755 ns     404734 ns      10000 bpi=12.5393
+// ClusteredValuesFixture/decode/16777216      806637 ns     806659 ns      10000 bpi=12.0132
+// ClusteredValuesFixture/decode/33554432     1609413 ns    1609436 ns      10000 bpi=12
+// ClusteredValuesFixture/decode/67108864     3219339 ns    3219375 ns      10000 bpi=12.0141
+// ClusteredValuesFixture/decode/134217728    6428934 ns    6429096 ns      10000 bpi=12

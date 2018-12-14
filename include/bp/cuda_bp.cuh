@@ -41,13 +41,6 @@ size_t size_align8(size_t size) { return (size + 8ULL - 1) & ~(8ULL - 1); }
 
 } // namespace details
 
-/*
- * Format:
- * __________________________________
- * | Header (8-bit/value) | Payload |
- * ----------------------------------
- */
-
 template <size_t block_size = 32>
 static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
     bit_ostream bw(out);
@@ -60,8 +53,11 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
         auto b  = i / block_size;
         bits[b] = std::max(bit, bits[b]);
     }
+    bw.write(0, 32);
+    uint32_t offset = 0;
     for (auto b : bits) {
-        bw.write(b, 8);
+        offset+=b;
+        bw.write(offset, 32);
     }
     for (size_t i = 0; i < n; ++i) {
         auto value = in[i];
@@ -95,10 +91,10 @@ __global__ void kernel_extract_bits(uint32_t *out, const uint32_t *in, size_t n)
     }
 }
 
-__global__ void kernel_decode(uint32_t *out, const uint32_t *in, size_t n,  const uint8_t* bit_sizes, uint32_t* offsets) {
+__global__ void kernel_decode(uint32_t *out, const uint32_t *in, size_t n, const uint32_t* offsets) {
     size_t index = blockIdx.x * blockDim.x + threadIdx.x;
     if(index < n) {
-      uint8_t bit_size = bit_sizes[blockIdx.x];
+      uint8_t bit_size = (offsets[blockIdx.x+1] - offsets[blockIdx.x]);
       uint32_t offset = offsets[blockIdx.x];
       out[index] = extract(in+offset, threadIdx.x, bit_size);
     }
@@ -106,21 +102,9 @@ __global__ void kernel_decode(uint32_t *out, const uint32_t *in, size_t n,  cons
 
 
 static void decode(uint32_t *d_out, const uint8_t *d_in, size_t n) {
-    size_t           header_len  = ceil(n/32);
-
-
-    uint32_t *     d_offsets;
-    CUDA_CHECK_ERROR(cudaMalloc((void **)&d_offsets, header_len * sizeof(uint32_t)));
-
-    kernel_extract_bits<<<ceil(header_len/32), 32>>>(d_offsets, reinterpret_cast<const uint32_t *>(d_in), header_len);
-
-    thrust::device_ptr<uint32_t> dp_offsets(d_offsets);
-    thrust::exclusive_scan(dp_offsets, dp_offsets+header_len, dp_offsets);
-
+    size_t           header_len  = 4*(ceil(n/32) + 1);
     const uint8_t *      d_payload = d_in + header_len;
-    kernel_decode<<<ceil(n/32), 32>>>(d_out, reinterpret_cast<const uint32_t *>(d_payload), n, d_in, d_offsets);
-    cudaFree(d_offsets);
-
+    kernel_decode<<<ceil(n/32), 32>>>(d_out, reinterpret_cast<const uint32_t *>(d_payload), n, reinterpret_cast<const uint32_t *>(d_in));
 }
 
 } // namespace cuda_bp

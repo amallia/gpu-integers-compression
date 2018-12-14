@@ -33,7 +33,7 @@ public:
         using namespace gpu_ic;
 
         IntegerCODEC &codec = *CODECFactory::getFromName("BP32");
-        UniformDataGenerator clu;
+        UniformDataGenerator clu(1);
         values = clu.generate(st.range(0), 1U << 29);
         utils::delta_encode(values.data(), values.size());
 
@@ -83,7 +83,7 @@ public:
         using namespace gpu_ic;
 
         IntegerCODEC &codec = *CODECFactory::getFromName("BP32");
-        ClusteredDataGenerator clu;
+        ClusteredDataGenerator clu(1);
         values = clu.generate(st.range(0), 1U << 29);
         utils::delta_encode(values.data(), values.size());
 
