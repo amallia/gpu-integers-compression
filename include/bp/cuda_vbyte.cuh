@@ -16,20 +16,11 @@
 
 #pragma once
 
-#include <algorithm>
-#include <cassert>
 #include <cuda.h>
-#include <iostream>
-#include <numeric>
-#include <thrust/device_ptr.h>
-#include <thrust/execution_policy.h>
-#include <thrust/scan.h>
-#include <utility>
-#include <x86intrin.h>
+
 #include "cub/cub.cuh"
 
-#include "bit_ostream.hpp"
-#include "bp/cuda_common.hpp"
+#include "utils/bit_ostream.hpp"
 
 namespace cuda_vbyte {
 

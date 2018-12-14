@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "benchmark/benchmark.h"
 
 #include "bp/cuda_copy.cuh"
-#include "bp/cuda_common.hpp"
-
+#include "bp/utils/utils.hpp"
+#include "bp/utils/cuda_utils.hpp"
 
 #include <cuda.h>
 

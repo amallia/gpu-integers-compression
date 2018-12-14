@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 #include <cuda.h>
-#include "bp/utils.hpp"
-
-#include "synthetic.hpp"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "benchmark/benchmark.h"
 
 #include "bp/cuda_vbyte.cuh"
-#include "bp/cuda_common.hpp"
+#include "bp/utils/utils.hpp"
+#include "bp/utils/cuda_utils.hpp"
+
+#include "synthetic.hpp"
+
 
 __global__
 void warmUpGPU()
@@ -168,42 +169,3 @@ BENCHMARK_REGISTER_F(ClusteredValuesFixture, decode)->RangeMultiplier(2)->Range(
 BENCHMARK_MAIN();
 
 
-// 2018-12-13 00:04:06
-// Running ./bench/cuda_vbyte_bench
-// Run on (28 X 3500 MHz CPU s)
-// CPU Caches:
-//   L1 Data 32K (x28)
-//   L1 Instruction 32K (x28)
-//   L2 Unified 256K (x28)
-//   L3 Unified 35840K (x2)
-// ***WARNING*** CPU scaling is enabled, the benchmark real time measurements may be noisy and will incur extra overhead.
-// ---------------------------------------------------------------------------------------------
-// Benchmark                                      Time           CPU Iterations UserCounters...
-// ---------------------------------------------------------------------------------------------
-// UniformValuesFixture/decode/32768           4387 ns       4386 ns     156725 bpi=19.7363
-// UniformValuesFixture/decode/65536           6086 ns       6086 ns     127036 bpi=19.3691
-// UniformValuesFixture/decode/131072          9471 ns       9471 ns      81287 bpi=19.1047
-// UniformValuesFixture/decode/262144         16420 ns      16420 ns      46420 bpi=18.696
-// UniformValuesFixture/decode/524288         29399 ns      29399 ns      25455 bpi=17.8539
-// UniformValuesFixture/decode/1048576        54536 ns      54535 ns      10000 bpi=16.4833
-// UniformValuesFixture/decode/2097152       103313 ns     103312 ns      10000 bpi=14.573
-// UniformValuesFixture/decode/4194304       203434 ns     203435 ns      10000 bpi=12.7069
-// UniformValuesFixture/decode/8388608       406000 ns     406007 ns      10000 bpi=12.0023
-// UniformValuesFixture/decode/16777216      808346 ns     808365 ns      10000 bpi=12
-// UniformValuesFixture/decode/33554432     1609178 ns    1609173 ns      10000 bpi=12
-// UniformValuesFixture/decode/67108864     3217725 ns    3217787 ns      10000 bpi=12
-// UniformValuesFixture/decode/134217728    6428325 ns    6428410 ns      10000 bpi=12
-//
-// ClusteredValuesFixture/decode/32768           4385 ns       4385 ns     155782 bpi=17.3623
-// ClusteredValuesFixture/decode/65536           6081 ns       6081 ns     127130 bpi=18.9751
-// ClusteredValuesFixture/decode/131072          9462 ns       9462 ns      81318 bpi=18.1907
-// ClusteredValuesFixture/decode/262144         16409 ns      16409 ns      46482 bpi=17.158
-// ClusteredValuesFixture/decode/524288         29398 ns      29398 ns      25460 bpi=15.207
-// ClusteredValuesFixture/decode/1048576        52895 ns      52895 ns      10000 bpi=15.2155
-// ClusteredValuesFixture/decode/2097152       103668 ns     103666 ns      10000 bpi=14.364
-// ClusteredValuesFixture/decode/4194304       202812 ns     202815 ns      10000 bpi=12.8403
-// ClusteredValuesFixture/decode/8388608       404755 ns     404734 ns      10000 bpi=12.5393
-// ClusteredValuesFixture/decode/16777216      806637 ns     806659 ns      10000 bpi=12.0132
-// ClusteredValuesFixture/decode/33554432     1609413 ns    1609436 ns      10000 bpi=12
-// ClusteredValuesFixture/decode/67108864     3219339 ns    3219375 ns      10000 bpi=12.0141
-// ClusteredValuesFixture/decode/134217728    6428934 ns    6429096 ns      10000 bpi=12

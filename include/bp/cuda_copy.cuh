@@ -16,16 +16,9 @@
 
 #pragma once
 
-#include <iostream>
-#include <cassert>
-#include <algorithm>
 #include <cuda.h>
-#include <numeric>
-#include <utility>
-#include <x86intrin.h>
-#include <algorithm>
 
-#include "cuda_common.hpp"
+#include "utils/utils.hpp"
 
 namespace cuda_copy {
 

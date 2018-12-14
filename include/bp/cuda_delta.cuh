@@ -16,18 +16,10 @@
 
 #pragma once
 
-#include <iostream>
-#include <cassert>
-#include <algorithm>
 #include <cuda.h>
-#include <numeric>
-#include <utility>
-#include <x86intrin.h>
 #include <algorithm>
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
-
-#include "cuda_common.hpp"
 
 namespace cuda_delta {
 

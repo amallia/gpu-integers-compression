@@ -16,6 +16,10 @@
 
 #pragma once
 
+#include <cuda.h>
+#include <iostream>
+#include <stdexcept>
+
 namespace utils {
 
 static void delta_encode(uint32_t *in, size_t n) {

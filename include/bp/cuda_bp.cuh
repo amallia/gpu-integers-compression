@@ -17,27 +17,15 @@
 #pragma once
 
 #include <algorithm>
-#include <cassert>
-#include <cuda.h>
-#include <iostream>
 #include <numeric>
 #include <utility>
-#include <x86intrin.h>
-#include <thrust/device_ptr.h>
-#include <thrust/scan.h>
-#include <thrust/execution_policy.h>
+#include <cuda.h>
 
-#include "bit_istream.hpp"
-#include "bit_ostream.hpp"
-#include "bp/cuda_common.hpp"
+#include "utils/bit_istream.hpp"
+#include "utils/bit_ostream.hpp"
+#include "utils/utils.hpp"
 
 namespace cuda_bp {
-
-namespace details {
-
-static inline size_t bits(const size_t v) { return v == 0 ? 0 : 64 - __builtin_clzll(v); }
-
-} // namespace details
 
 template <size_t block_size = 32>
 static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
@@ -47,7 +35,7 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
     std::vector<size_t> bits(blocks, 0);
     for (size_t i = 0; i < n; ++i) {
         auto value = in[i];
-        auto bit = details::bits(value);
+        size_t bit = utils::bits(value);
         auto b  = i / block_size;
         bits[b] = std::max(bit, bits[b]);
     }
