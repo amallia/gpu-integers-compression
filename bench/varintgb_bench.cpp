@@ -18,7 +18,7 @@
 #include <gtest/gtest.h>
 #include "benchmark/benchmark.h"
 #include "../external/FastPFor/headers/codecfactory.h"
-#include "bp/utils/utils.hpp"
+#include "gpu_ic/utils/utils.hpp"
 
 #include "synthetic.hpp"
 

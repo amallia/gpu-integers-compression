@@ -19,7 +19,7 @@
 #include "benchmark/benchmark.h"
 #include "../external/FastPFor/headers/codecfactory.h"
 #include "synthetic.hpp"
-#include "bp/utils/utils.hpp"
+#include "gpu_ic/utils/utils.hpp"
 
 
 class UniformValuesFixture : public ::benchmark::Fixture {

@@ -18,9 +18,9 @@
 #include "gtest/gtest.h"
 #include "benchmark/benchmark.h"
 
-#include "bp/cuda_copy.cuh"
-#include "bp/utils/utils.hpp"
-#include "bp/utils/cuda_utils.hpp"
+#include "gpu_ic/cuda_copy.cuh"
+#include "gpu_ic/utils/utils.hpp"
+#include "gpu_ic/utils/cuda_utils.hpp"
 
 #include <cuda.h>
 

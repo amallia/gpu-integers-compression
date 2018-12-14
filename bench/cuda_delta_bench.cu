@@ -19,9 +19,9 @@
 #include "gtest/gtest.h"
 #include "benchmark/benchmark.h"
 
-#include "bp/utils/utils.hpp"
-#include "bp/cuda_delta.cuh"
-#include "bp/utils/cuda_utils.hpp"
+#include "gpu_ic/utils/utils.hpp"
+#include "gpu_ic/cuda_delta.cuh"
+#include "gpu_ic/utils/cuda_utils.hpp"
 
 
 __global__

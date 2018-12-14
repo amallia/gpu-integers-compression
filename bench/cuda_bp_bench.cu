@@ -21,9 +21,9 @@
 
 
 #include "synthetic.hpp"
-#include "bp/cuda_bp.cuh"
-#include "bp/utils/utils.hpp"
-#include "bp/utils/cuda_utils.hpp"
+#include "gpu_ic/cuda_bp.cuh"
+#include "gpu_ic/utils/utils.hpp"
+#include "gpu_ic/utils/cuda_utils.hpp"
 
 __global__
 void warmUpGPU()
