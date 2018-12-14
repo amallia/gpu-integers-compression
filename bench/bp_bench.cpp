@@ -127,6 +127,22 @@ BENCHMARK_DEFINE_F(UniformValuesFixture, decode)(benchmark::State& state) {
 }
 BENCHMARK_REGISTER_F(UniformValuesFixture, decode)->RangeMultiplier(2)->Range((1ULL << 15), (1ULL<<25));
 
+BENCHMARK_DEFINE_F(UniformValuesFixture, decodeDelta)(benchmark::State& state) {
+    using namespace FastPForLib;
+    IntegerCODEC &codec = *CODECFactory::getFromName("BP32");
+
+    while (state.KeepRunning()) {
+          size_t recoveredsize = 0;
+          codec.decodeArray(encoded_values.data(), encoded_values.size(),
+                    decoded_values.data(), recoveredsize);
+        utils::delta_decode(decoded_values.data(), decoded_values.size());
+    }
+    utils::delta_decode(values.data(), values.size());
+    auto bpi = double(32*encoded_values.size())/decoded_values.size();
+    state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);
+}
+BENCHMARK_REGISTER_F(UniformValuesFixture, decodeDelta)->RangeMultiplier(2)->Range((1ULL << 15), (1ULL<<25));
+
 BENCHMARK_DEFINE_F(ClusteredValuesFixture, decode)(benchmark::State& state) {
     using namespace FastPForLib;
     IntegerCODEC &codec = *CODECFactory::getFromName("BP32");
@@ -140,6 +156,22 @@ BENCHMARK_DEFINE_F(ClusteredValuesFixture, decode)(benchmark::State& state) {
     state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);
 }
 BENCHMARK_REGISTER_F(ClusteredValuesFixture, decode)->RangeMultiplier(2)->Range((1ULL << 15), (1ULL<<25));
+
+BENCHMARK_DEFINE_F(ClusteredValuesFixture, decodeDelta)(benchmark::State& state) {
+    using namespace FastPForLib;
+    IntegerCODEC &codec = *CODECFactory::getFromName("BP32");
+
+    while (state.KeepRunning()) {
+          size_t recoveredsize = 0;
+          codec.decodeArray(encoded_values.data(), encoded_values.size(),
+                    decoded_values.data(), recoveredsize);
+          utils::delta_decode(decoded_values.data(), decoded_values.size());
+    }
+    utils::delta_decode(values.data(), values.size());
+    auto bpi = double(32*encoded_values.size())/decoded_values.size();
+    state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);
+}
+BENCHMARK_REGISTER_F(ClusteredValuesFixture, decodeDelta)->RangeMultiplier(2)->Range((1ULL << 15), (1ULL<<25));
 
 BENCHMARK_MAIN();
 

@@ -23,10 +23,9 @@
 
 namespace cuda_delta {
 
-static void decode(uint32_t *d_out, const uint8_t *d_in, size_t n) {
-  thrust::device_ptr<const uint32_t> dp_in(reinterpret_cast<const uint32_t*>(d_in));
-  thrust::device_ptr<uint32_t> dp_out(d_out);
-  thrust::inclusive_scan(dp_in, dp_in+n, dp_out);
+static void decode(uint32_t *d_in, size_t n) {
+  thrust::device_ptr<uint32_t> dp_in(d_in);
+  thrust::inclusive_scan(dp_in, dp_in+n, dp_in);
 }
 
 

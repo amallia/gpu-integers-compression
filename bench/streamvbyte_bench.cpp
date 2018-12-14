@@ -136,7 +136,7 @@ BENCHMARK_DEFINE_F(UniformValuesFixture, decode)(benchmark::State& state) {
     state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);
 
 }
-BENCHMARK_REGISTER_F(UniformValuesFixture, decode)->RangeMultiplier(2)->Range((1ULL << 15), (1ULL<<27));
+BENCHMARK_REGISTER_F(UniformValuesFixture, decode)->RangeMultiplier(2)->Range((1ULL << 15), (1ULL<<25));
 
 
 BENCHMARK_DEFINE_F(ClusteredValuesFixture, decode)(benchmark::State& state) {
@@ -152,7 +152,7 @@ BENCHMARK_DEFINE_F(ClusteredValuesFixture, decode)(benchmark::State& state) {
     state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);
 
 }
-BENCHMARK_REGISTER_F(ClusteredValuesFixture, decode)->RangeMultiplier(2)->Range((1ULL << 15), (1ULL<<27));
+BENCHMARK_REGISTER_F(ClusteredValuesFixture, decode)->RangeMultiplier(2)->Range((1ULL << 15), (1ULL<<25));
 
 BENCHMARK_MAIN();
 

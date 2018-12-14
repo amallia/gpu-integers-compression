@@ -83,13 +83,13 @@ public:
 };
 
 
-BENCHMARK_DEFINE_F(RandomValuesFixture, decode)(benchmark::State& state) {
-    while (state.KeepRunning()) {
-        cuda_delta::decode(d_decoded, reinterpret_cast<uint8_t*>(d_encoded), decoded_values.size());
-    }
-    auto bpi = 32;
-    state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);
-}
-BENCHMARK_REGISTER_F(RandomValuesFixture, decode)->Range(1ULL<<14, 1ULL<<28);
+// BENCHMARK_DEFINE_F(RandomValuesFixture, decode)(benchmark::State& state) {
+//     while (state.KeepRunning()) {
+//         cuda_delta::decode(d_decoded, reinterpret_cast<uint8_t*>(d_encoded), decoded_values.size());
+//     }
+//     auto bpi = 32;
+//     state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);
+// }
+// BENCHMARK_REGISTER_F(RandomValuesFixture, decode)->Range(1ULL<<14, 1ULL<<28);
 
 BENCHMARK_MAIN();
