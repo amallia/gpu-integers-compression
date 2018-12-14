@@ -27,9 +27,6 @@
 
 #include "cuda_common.hpp"
 
-#include "bit_stream/bit_istream.hpp"
-#include "bit_stream/bit_ostream.hpp"
-
 namespace cuda_copy {
 
 __global__

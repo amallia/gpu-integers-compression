@@ -6,7 +6,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 MESSAGE( STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE} )
 
-project(binary_packing)
+project(gpu_integers_compression)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -42,11 +42,11 @@ CUDA_SELECT_NVCC_ARCH_FLAGS(ARCH_FLAGS "Auto")
 list(APPEND CUDA_NVCC_FLAGS ${ARCH_FLAGS})
 
 include_directories(include)
-add_library(binary_packing INTERFACE)
-target_include_directories(binary_packing INTERFACE
+add_library(gpu_integers_compression INTERFACE)
+target_include_directories(gpu_integers_compression INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
 )
-target_link_libraries(binary_packing INTERFACE bit_stream cub)
+target_link_libraries(gpu_integers_compression INTERFACE cub)
 
 enable_testing()
 add_subdirectory(bench)

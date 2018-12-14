@@ -27,8 +27,8 @@
 #include <thrust/scan.h>
 #include <thrust/execution_policy.h>
 
-#include "bit_stream/bit_istream.hpp"
-#include "bit_stream/bit_ostream.hpp"
+#include "bit_istream.hpp"
+#include "bit_ostream.hpp"
 #include "bp/cuda_common.hpp"
 
 namespace cuda_bp {
@@ -36,8 +36,6 @@ namespace cuda_bp {
 namespace details {
 
 static inline size_t bits(const size_t v) { return v == 0 ? 0 : 64 - __builtin_clzll(v); }
-
-size_t size_align8(size_t size) { return (size + 8ULL - 1) & ~(8ULL - 1); }
 
 } // namespace details
 

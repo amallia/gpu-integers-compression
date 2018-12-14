@@ -151,42 +151,42 @@ BENCHMARK_REGISTER_F(ClusteredValuesFixture, decode)->RangeMultiplier(2)->Range(
 BENCHMARK_MAIN();
 
 
-// 2018-12-13 16:55:50
-// Running ./bench/bp_bench
-// Run on (20 X 3300 MHz CPU s)
+// 2018-12-13 20:20:04
+// Running ./bench/cuda_bp_bench
+// Run on (28 X 3500 MHz CPU s)
 // CPU Caches:
-//   L1 Data 32K (x20)
-//   L1 Instruction 32K (x20)
-//   L2 Unified 256K (x20)
-//   L3 Unified 25600K (x2)
+//   L1 Data 32K (x28)
+//   L1 Instruction 32K (x28)
+//   L2 Unified 256K (x28)
+//   L3 Unified 35840K (x2)
 // ***WARNING*** CPU scaling is enabled, the benchmark real time measurements may be noisy and will incur extra overhead.
 // -----------------------------------------------------------------------------------------------
 // Benchmark                                        Time           CPU Iterations UserCounters...
 // -----------------------------------------------------------------------------------------------
-// UniformValuesFixture/decode/32768            17409 ns      17385 ns      40108 bpi=16.6943
-// UniformValuesFixture/decode/65536            35655 ns      35617 ns      19475 bpi=15.7017
-// UniformValuesFixture/decode/131072           87983 ns      87858 ns       8024 bpi=14.7017
-// UniformValuesFixture/decode/262144          174795 ns     174617 ns       4014 bpi=13.7122
-// UniformValuesFixture/decode/524288          344581 ns     344472 ns       2017 bpi=12.6995
-// UniformValuesFixture/decode/1048576         673893 ns     673677 ns       1035 bpi=11.6968
-// UniformValuesFixture/decode/2097152        1454940 ns    1454459 ns        487 bpi=10.6989
-// UniformValuesFixture/decode/4194304        3159596 ns    3154739 ns        218 bpi=9.69363
-// UniformValuesFixture/decode/8388608        6883850 ns    6876522 ns        101 bpi=8.69091
-// UniformValuesFixture/decode/16777216      13062984 ns   13047336 ns         53 bpi=7.68572
-// UniformValuesFixture/decode/33554432      27467047 ns   27458426 ns         26 bpi=6.67464
-// UniformValuesFixture/decode/67108864      53611274 ns   53553763 ns         13 bpi=5.64925
-// UniformValuesFixture/decode/134217728     92672544 ns   92576065 ns          8 bpi=4.59395
-// ClusteredValuesFixture/decode/32768          18784 ns      18778 ns      35470 bpi=15.3086
-// ClusteredValuesFixture/decode/65536          40722 ns      40710 ns      18460 bpi=15.3008
-// ClusteredValuesFixture/decode/131072         74047 ns      74022 ns       8457 bpi=12.5525
-// ClusteredValuesFixture/decode/262144        167060 ns     166894 ns       4217 bpi=12.9794
-// ClusteredValuesFixture/decode/524288        322968 ns     322624 ns       2215 bpi=10.9802
-// ClusteredValuesFixture/decode/1048576       665217 ns     664979 ns       1022 bpi=10.1548
-// ClusteredValuesFixture/decode/2097152      1243538 ns    1241797 ns        549 bpi=8.51848
-// ClusteredValuesFixture/decode/4194304      2919127 ns    2911155 ns        244 bpi=7.27275
-// ClusteredValuesFixture/decode/8388608      6502194 ns    6494839 ns        107 bpi=7.16933
-// ClusteredValuesFixture/decode/16777216    12394977 ns   12377570 ns         58 bpi=6.55128
-// ClusteredValuesFixture/decode/33554432    26618851 ns   26582725 ns         27 bpi=6.07258
-// ClusteredValuesFixture/decode/67108864    48767993 ns   48714277 ns         14 bpi=4.03127
-// ClusteredValuesFixture/decode/134217728   98318502 ns   98210648 ns          7 bpi=4.08377
+// UniformValuesFixture/decode/32768             4015 ns       4015 ns     174989 bpi=17.4648
+// UniformValuesFixture/decode/65536             5913 ns       5912 ns     130802 bpi=16.458
+// UniformValuesFixture/decode/131072            9213 ns       9212 ns      83587 bpi=15.4509
+// UniformValuesFixture/decode/262144           15922 ns      15921 ns      47925 bpi=14.451
+// UniformValuesFixture/decode/524288           28889 ns      28887 ns      25928 bpi=13.4471
+// UniformValuesFixture/decode/1048576          52090 ns      52061 ns      10000 bpi=12.4435
+// UniformValuesFixture/decode/2097152         101568 ns     101561 ns      10000 bpi=11.4459
+// UniformValuesFixture/decode/4194304         200545 ns     200480 ns      10000 bpi=10.4459
+// UniformValuesFixture/decode/8388608         398404 ns     398387 ns      10000 bpi=9.44149
+// UniformValuesFixture/decode/16777216        795832 ns     795792 ns      10000 bpi=8.43567
+// UniformValuesFixture/decode/33554432       1587140 ns    1587061 ns      10000 bpi=7.42388
+// UniformValuesFixture/decode/67108864       3168809 ns    3168674 ns      10000 bpi=6.39956
+// UniformValuesFixture/decode/134217728      6335958 ns    6335701 ns      10000 bpi=5.34388
+// ClusteredValuesFixture/decode/32768           4026 ns       4026 ns     174544 bpi=16.1348
+// ClusteredValuesFixture/decode/65536           5906 ns       5905 ns     130792 bpi=14.6621
+// ClusteredValuesFixture/decode/131072          9217 ns       9217 ns      83540 bpi=14.0693
+// ClusteredValuesFixture/decode/262144         15931 ns      15930 ns      47895 bpi=12.527
+// ClusteredValuesFixture/decode/524288         28890 ns      28888 ns      25926 bpi=12.0353
+// ClusteredValuesFixture/decode/1048576        52056 ns      52054 ns      10000 bpi=10.7443
+// ClusteredValuesFixture/decode/2097152       101566 ns     101560 ns      10000 bpi=9.07336
+// ClusteredValuesFixture/decode/4194304       200534 ns     200501 ns      10000 bpi=8.28108
+// ClusteredValuesFixture/decode/8388608       398396 ns     398366 ns      10000 bpi=8.16462
+// ClusteredValuesFixture/decode/16777216      794791 ns     794760 ns      10000 bpi=6.79579
+// ClusteredValuesFixture/decode/33554432     1587420 ns    1587330 ns      10000 bpi=6.14845
+// ClusteredValuesFixture/decode/67108864     3170195 ns    3170014 ns      10000 bpi=5.5435
+// ClusteredValuesFixture/decode/134217728    6335425 ns    6335043 ns      10000 bpi=4.88561
 //

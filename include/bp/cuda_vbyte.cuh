@@ -28,7 +28,7 @@
 #include <x86intrin.h>
 #include "cub/cub.cuh"
 
-#include "bit_stream/bit_ostream.hpp"
+#include "bit_ostream.hpp"
 #include "bp/cuda_common.hpp"
 
 namespace cuda_vbyte {
