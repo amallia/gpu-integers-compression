@@ -7,3 +7,6 @@
 [submodule "external/FastPFor"]
 	path = external/FastPFor
 	url = https://github.com/lemire/FastPFor.git
+[submodule "external/cub"]
+        path = external/cub
+        url = https://github.com/NVlabs/cub.git
