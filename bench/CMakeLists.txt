@@ -29,18 +29,4 @@ CUDA_ADD_EXECUTABLE(cuda_vbyte_bench cuda_vbyte_bench.cu)
   gtest
   gmock
 )
-CUDA_ADD_EXECUTABLE(cuda_copy_bench cuda_copy_bench.cu)
-  target_link_libraries(cuda_copy_bench
-  benchmark
-  gpu_integers_compression
-  gtest
-  gmock
-)
-CUDA_ADD_EXECUTABLE(cuda_delta_bench cuda_delta_bench.cu)
-  target_link_libraries(cuda_delta_bench
-  benchmark
-  gpu_integers_compression
-  gtest
-  gmock
-)
 endif()

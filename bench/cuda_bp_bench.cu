@@ -22,7 +22,6 @@
 
 #include "synthetic.hpp"
 #include "gpu_ic/cuda_bp.cuh"
- #include "gpu_ic/cuda_delta.cuh"
 #include "gpu_ic/utils/utils.hpp"
 #include "gpu_ic/utils/cuda_utils.hpp"
 
