@@ -85,9 +85,10 @@ CUDA_CHECK_ERROR(cudaMemcpy(decoded_values.data(), d_decoded, values.size() * si
 
 
 ## Benchmarks
-
-![benchmarks plot](plot.png)
-
+<p align="center">
+<img src="plot.png" width="75%">
+</p>
+    
 ```
 Running ./bench/cuda_bp_bench
 Run on (28 X 3500 MHz CPU s)
