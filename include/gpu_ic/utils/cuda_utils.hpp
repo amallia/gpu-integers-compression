@@ -14,6 +14,12 @@ inline void __cudaSafeCall(cudaError err, const char *file, const int line) {
     }
 }
 
+__global__
+void warmUpGPU()
+{
+  // do nothing
+}
+
 __device__ uint32_t extract(const uint32_t *in, size_t offset, size_t bit) {
     int      firstBit                = offset;
     int      lastBit                 = firstBit + bit - 1;

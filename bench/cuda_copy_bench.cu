@@ -24,12 +24,6 @@
 
 #include <cuda.h>
 
-__global__
-void warmUpGPU()
-{
-  // do nothing
-}
-
 class RandomValuesFixture : public ::benchmark::Fixture {
 
     static std::vector<uint32_t> generate_random_vector(size_t n) {
