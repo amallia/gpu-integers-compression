@@ -17,12 +17,13 @@
 #pragma once
 
 #include <algorithm>
+#include <cuda.h>
 #include <numeric>
 #include <utility>
-#include <cuda.h>
 
 #include "utils/bit_istream.hpp"
 #include "utils/bit_ostream.hpp"
+#include "utils/cuda_utils.hpp"
 #include "utils/utils.hpp"
 
 namespace cuda_bp {
@@ -34,15 +35,15 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
     auto                blocks = std::ceil((double)n / block_size);
     std::vector<size_t> bits(blocks, 0);
     for (size_t i = 0; i < n; ++i) {
-        auto value = in[i];
-        size_t bit = utils::bits(value);
-        auto b  = i / block_size;
-        bits[b] = std::max(bit, bits[b]);
+        auto   value = in[i];
+        size_t bit   = utils::bits(value);
+        auto   b     = i / block_size;
+        bits[b]      = std::max(bit, bits[b]);
     }
     bw.write(0, 32);
     uint32_t offset = 0;
     for (auto b : bits) {
-        offset+=b;
+        offset += b;
         bw.write(offset, 32);
     }
     for (size_t i = 0; i < n; ++i) {
@@ -50,47 +51,28 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
         auto b     = i / block_size;
         bw.write(value, bits[b]);
     }
-    return  ceil(bw.size()/8);
+    return ceil(bw.size() / 8);
 }
 
-__device__ uint32_t extract(const uint32_t *in, size_t index, size_t bit) {
-    int      firstBit                = bit * index;
-    int      lastBit                 = firstBit + bit - 1;
-    uint32_t packed                  = in[firstBit / 32];
-    int      firstBitInPacked        = firstBit % 32;
-    uint32_t packedOverflow          = in[lastBit / 32];
-    bool     isOverflowing           = lastBit % 32 < firstBitInPacked;
-    int      lastBitInPackedOverflow = !isOverflowing ? -1 : lastBit % 32;
-    uint32_t outFromPacked =
-        ((packed >> firstBitInPacked) & (0xFFFFFFFF >> (32 - (bit - lastBitInPackedOverflow - 1))));
-    uint32_t outFromOverflow = (packedOverflow & (0xFFFFFFFF >> (32 - lastBitInPackedOverflow - 1)))
-                               << (bit - lastBitInPackedOverflow - 1);
-    return outFromPacked | outFromOverflow;
-}
-
-__global__ void kernel_extract_bits(uint32_t *out, const uint32_t *in, size_t n) {
+__global__ void kernel_decode(uint32_t *      out,
+                              const uint32_t *in,
+                              size_t          n,
+                              const uint32_t *offsets) {
     size_t index = blockIdx.x * blockDim.x + threadIdx.x;
-    if(index < n) {
-      uint32_t bit_size = 8;
-      uint32_t offset = blockIdx.x * 8;
-      out[index] = extract(in+offset, threadIdx.x, bit_size);
+    if (index < n) {
+        uint8_t  bit_size = (offsets[blockIdx.x + 1] - offsets[blockIdx.x]);
+        uint32_t offset   = offsets[blockIdx.x];
+        out[index]        = extract(in + offset, threadIdx.x * bit_size, bit_size);
     }
 }
-
-__global__ void kernel_decode(uint32_t *out, const uint32_t *in, size_t n, const uint32_t* offsets) {
-    size_t index = blockIdx.x * blockDim.x + threadIdx.x;
-    if(index < n) {
-      uint8_t bit_size = (offsets[blockIdx.x+1] - offsets[blockIdx.x]);
-      uint32_t offset = offsets[blockIdx.x];
-      out[index] = extract(in+offset, threadIdx.x, bit_size);
-    }
-}
-
 
 static void decode(uint32_t *d_out, const uint8_t *d_in, size_t n) {
-    size_t           header_len  = 4*(ceil(n/32) + 1);
-    const uint8_t *      d_payload = d_in + header_len;
-    kernel_decode<<<ceil(n/32), 32>>>(d_out, reinterpret_cast<const uint32_t *>(d_payload), n, reinterpret_cast<const uint32_t *>(d_in));
+    size_t         header_len = 4 * (ceil(n / 32) + 1);
+    const uint8_t *d_payload  = d_in + header_len;
+    kernel_decode<<<ceil(n / 32), 32>>>(d_out,
+                                        reinterpret_cast<const uint32_t *>(d_payload),
+                                        n,
+                                        reinterpret_cast<const uint32_t *>(d_in));
 }
 
 } // namespace cuda_bp

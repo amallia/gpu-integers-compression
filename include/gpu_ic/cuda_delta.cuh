@@ -16,17 +16,16 @@
 
 #pragma once
 
-#include <cuda.h>
 #include <algorithm>
+#include <cuda.h>
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
 
 namespace cuda_delta {
 
 static void decode(uint32_t *d_in, size_t n) {
-  thrust::device_ptr<uint32_t> dp_in(d_in);
-  thrust::inclusive_scan(dp_in, dp_in+n, dp_in);
+    thrust::device_ptr<uint32_t> dp_in(d_in);
+    thrust::inclusive_scan(dp_in, dp_in + n, dp_in);
 }
 
-
-} // namespace cuda_bp
+} // namespace cuda_delta

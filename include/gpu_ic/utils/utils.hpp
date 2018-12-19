@@ -41,11 +41,4 @@ inline constexpr uint_fast8_t bits(size_t value) {
     return value == 0 ? 1U : (64 - __builtin_clzll(value));
 }
 
-constexpr size_t round_up_div(size_t x, size_t y) { return (x + y - 1) / y; }
-
-/*
- * Computes the number of bytes required to store the given integer value.
- */
-inline constexpr uint_fast8_t bytes(size_t value) { return round_up_div(bits(value), 8U); }
-
 } // namespace utils
