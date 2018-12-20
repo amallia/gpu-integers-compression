@@ -25,7 +25,7 @@
 
 namespace cuda_vbyte {
 
-template <size_t block_size = 32>
+template <size_t block_size = 64>
 static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
 
     bit_ostream bw_offset(out);
@@ -79,7 +79,7 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
 
     return offset_len;
 }
-
+template <size_t block_size = 64>
 __global__ void kernel_decode(uint32_t *      out,
                               const uint32_t *in,
                               size_t          n,
@@ -87,12 +87,12 @@ __global__ void kernel_decode(uint32_t *      out,
 
     size_t     index  = blockIdx.x * blockDim.x + threadIdx.x;
     uint32_t   offset = offsets[blockIdx.x] / 4;
-    __shared__ uint32_t min_offsets[32 + 1];
+    __shared__ uint32_t min_offsets[block_size + 1];
 
     min_offsets[threadIdx.x + 1] = (extract(in + offset, threadIdx.x * 2, 2) + 1) * 8;
     __syncthreads();
 
-    typedef cub::BlockScan<uint32_t, 32>       BlockScan;
+    typedef cub::BlockScan<uint32_t, block_size>       BlockScan;
     __shared__ typename BlockScan::TempStorage temp_storage;
     BlockScan(temp_storage)
         .InclusiveSum(min_offsets[threadIdx.x + 1], min_offsets[threadIdx.x + 1]);
@@ -100,10 +100,11 @@ __global__ void kernel_decode(uint32_t *      out,
 
     if (index < n) {
         uint32_t bit = min_offsets[threadIdx.x + 1] - min_offsets[threadIdx.x];
-        out[index]   = extract(in + offset + 2, min_offsets[threadIdx.x], bit);
+        uint32_t header_len = 2 * (block_size/32);
+        out[index]   = extract(in + offset + header_len, min_offsets[threadIdx.x], bit);
     }
 }
-template <size_t block_size = 32>
+template <size_t block_size = 64>
 static void decode(uint32_t *d_out, const uint8_t *d_in, size_t n) {
     size_t         block_num  = ceil(n / block_size);
     size_t         offset_len = 4 * block_num + 4;
