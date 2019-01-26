@@ -25,7 +25,7 @@
 
 namespace cuda_vbyte {
 
-template <size_t block_size = 64>
+template <size_t block_size = 128>
 static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
 
     bit_ostream bw_offset(out);
@@ -79,7 +79,7 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
 
     return offset_len;
 }
-template <size_t block_size = 64>
+template <size_t block_size = 128>
 __global__ void kernel_decode(uint32_t *      out,
                               const uint32_t *in,
                               size_t          n,
@@ -88,7 +88,7 @@ __global__ void kernel_decode(uint32_t *      out,
     size_t     index  = blockIdx.x * blockDim.x + threadIdx.x;
     uint32_t   offset = offsets[blockIdx.x] / 4;
     __shared__ uint32_t min_offsets[block_size + 1];
-
+    min_offsets[0] = 0;
     min_offsets[threadIdx.x + 1] = (extract(in + offset, threadIdx.x * 2, 2) + 1) * 8;
     __syncthreads();
 
@@ -104,7 +104,7 @@ __global__ void kernel_decode(uint32_t *      out,
         out[index]   = extract(in + offset + header_len, min_offsets[threadIdx.x], bit);
     }
 }
-template <size_t block_size = 64>
+template <size_t block_size = 128>
 static void decode(uint32_t *d_out, const uint8_t *d_in, size_t n) {
     size_t         block_num  = ceil(n / block_size);
     size_t         offset_len = 4 * block_num + 4;
