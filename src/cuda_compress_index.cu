@@ -1,5 +1,5 @@
 #include "CLI/CLI.hpp"
-#include "../external/FastPFor/headers/codecfactory.h"
+#include "gpu_ic/cuda_bp.cuh"
 #include "gpu_ic/utils/binary_freq_collection.hpp"
 #include "gpu_ic/utils/progress.hpp"
 
@@ -7,8 +7,7 @@ using namespace gpu_ic;
 using namespace FastPForLib;
 template <typename InputCollection, typename Codec>
 void create_collection(InputCollection const &input,
-                       const std::string &output_filename,
-                       Codec &codec) {
+                       const std::string &output_filename) {
     std::ofstream fout(output_filename, std::ios::binary);
 
     std::vector<uint8_t> payload;
@@ -34,8 +33,7 @@ void create_collection(InputCollection const &input,
                 values[i] = doc - last_doc - 1;
                 last_doc = doc;
             }
-            size_t compressedsize = 0;
-            codec.encodeArray(values.data(), values.size(), reinterpret_cast<uint32_t*>(encoded_values.data()), compressedsize);
+            auto compressedsize = Codec::encode(encoded_values.data(), values.data(), values.size());
             payload.insert(payload.end(), encoded_values.data(), encoded_values.data() + compressedsize*4);
             postings += size;
             endpoints.push_back(encoded_values.size());
@@ -60,18 +58,10 @@ int main(int argc, char const *argv[])
     CLI11_PARSE(app, argc, argv);
 
     binary_freq_collection input(input_basename.c_str());
-    if (type == "simdbp") {
-        IntegerCODEC &codec = *CODECFactory::getFromName("simdbinarypacking");
-        create_collection(input, output_filename, codec);
-    } else if (type == "streamvbyte") {
-        IntegerCODEC &codec = *CODECFactory::getFromName("streamvbyte");
-        create_collection(input, output_filename, codec);
-    } else if (type == "bp") {
-        IntegerCODEC &codec = *CODECFactory::getFromName("BP32");
-        create_collection(input, output_filename, codec);
-    } else if (type == "varintgb") {
-        IntegerCODEC &codec = *CODECFactory::getFromName("varintgb");
-        create_collection(input, output_filename, codec);
+    if (type == "cuda_bp") {
+        create_collection<binary_freq_collection, cuda_bp>(input, output_filename);
+    } else if (type == "cuda_vbyte") {
+        create_collection<binary_freq_collection, cuda_vbyte>(input, output_filename);
     } else {
         std::cerr << "Unknown type" << std::endl;
     }
