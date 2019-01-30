@@ -2,6 +2,7 @@
 // #include "gpu_ic/cuda_bp.cuh"
 #include "../external/FastPFor/headers/codecfactory.h"
 #include "gpu_ic/utils/binary_freq_collection.hpp"
+#include "gpu_ic/utils/progress.hpp"
 
 using namespace gpu_ic;
 using namespace FastPForLib;
@@ -16,31 +17,34 @@ void create_collection(InputCollection const &input,
     endpoints.push_back(0);
 
     size_t postings = 0;
-    for (auto const &plist : input) {
+    {
+        pisa::progress progress("Create index", input.size());
+
+        for (auto const &plist : input) {
 
 
-        size_t size = plist.docs.size();
-        std::vector<uint32_t> values(size);
-        std::vector<uint8_t> encoded_values(size*4);
+            size_t size = plist.docs.size();
+            std::vector<uint32_t> values(size);
+            std::vector<uint8_t> encoded_values(size*4);
 
-        auto docs_it = plist.docs.begin();
+            auto docs_it = plist.docs.begin();
 
-        uint32_t last_doc = 0;
-        for (size_t i = 0; i < size; ++i) {
-            uint32_t doc(*docs_it++);
-            values[i] = doc - last_doc - 1;
-            last_doc = doc;
+            uint32_t last_doc = 0;
+            for (size_t i = 0; i < size; ++i) {
+                uint32_t doc(*docs_it++);
+                values[i] = doc - last_doc - 1;
+                last_doc = doc;
+            }
+            size_t compressedsize = 0;
+            codec.encodeArray(values.data(), values.size(), reinterpret_cast<uint32_t*>(encoded_values.data()), compressedsize);
+            payload.insert(payload.end(), encoded_values.data(), encoded_values.data() + compressedsize*4);
+
+            postings += size;
+            endpoints.push_back(encoded_values.size());
+
+            progress.update(1);
         }
-        size_t compressedsize = 0;
-        codec.encodeArray(values.data(), values.size(), reinterpret_cast<uint32_t*>(encoded_values.data()), compressedsize);
-        payload.insert(payload.end(), encoded_values.data(), encoded_values.data() + compressedsize*4);
-
-        postings += size;
-        endpoints.push_back(encoded_values.size());
-
-
     }
-
     size_t docs_size = payload.size();
     double bits_per_doc  = docs_size * 8.0 / postings;
     std::cout << "Documents: " << postings << ", bytes: " << docs_size << ", bits/doc: " << bits_per_doc << std::endl;
