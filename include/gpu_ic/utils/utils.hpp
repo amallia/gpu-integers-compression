@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include <cuda.h>
 #include <iostream>
 #include <stdexcept>
 

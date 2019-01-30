@@ -10,3 +10,9 @@
 [submodule "external/cub"]
         path = external/cub
         url = https://github.com/NVlabs/cub.git
+[submodule "external/CLI11"]
+	path = external/CLI11
+	url = https://github.com/CLIUtils/CLI11.git
+[submodule "external/mio"]
+	path = external/mio
+	url = https://github.com/mandreyel/mio.git

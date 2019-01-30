@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <cuda.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "benchmark/benchmark.h"

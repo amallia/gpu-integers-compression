@@ -5,7 +5,6 @@ foreach(BENCH_SRC ${BENCH_SOURCES})
     target_link_libraries(${BENCH_SRC_NAME}
         benchmark
         gpu_integers_compression
-        FastPFor
         gtest
         gmock
     )
@@ -14,7 +13,7 @@ foreach(BENCH_SRC ${BENCH_SOURCES})
   add_test(${BENCH_SRC_NAME} ${BENCH_SRC_NAME})
 endforeach(BENCH_SRC)
 
-if(CUDA_FOUND)
+if(BUILD_CUDA)
 CUDA_ADD_EXECUTABLE(cuda_bp_bench cuda_bp_bench.cu)
   target_link_libraries(cuda_bp_bench
   benchmark
