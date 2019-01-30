@@ -25,7 +25,7 @@ void create_collection(InputCollection const &input,
 
             size_t size = plist.docs.size();
             std::vector<uint32_t> values(size);
-            std::vector<uint8_t> encoded_values(size*4);
+            std::vector<uint8_t> encoded_values(size*4+1024);
 
             auto docs_it = plist.docs.begin();
 
@@ -38,10 +38,8 @@ void create_collection(InputCollection const &input,
             size_t compressedsize = 0;
             codec.encodeArray(values.data(), values.size(), reinterpret_cast<uint32_t*>(encoded_values.data()), compressedsize);
             payload.insert(payload.end(), encoded_values.data(), encoded_values.data() + compressedsize*4);
-
             postings += size;
             endpoints.push_back(encoded_values.size());
-
             progress.update(1);
         }
     }
@@ -67,11 +65,18 @@ int main(int argc, char const *argv[])
         // create_collection<binary_freq_collection, cuda_bp>(input, output_filename, type);
     } else if (type == "cuda_vbyte") {
     } else if (type == "simdbp") {
+        IntegerCODEC &codec = *CODECFactory::getFromName("simdbinarypacking");
+        create_collection(input, output_filename, codec);
     } else if (type == "streamvbyte") {
         IntegerCODEC &codec = *CODECFactory::getFromName("streamvbyte");
         create_collection(input, output_filename, codec);
     } else if (type == "bp") {
+        IntegerCODEC &codec = *CODECFactory::getFromName("BP32");
+        create_collection(input, output_filename, codec);
+
     } else if (type == "varintgb") {
+        IntegerCODEC &codec = *CODECFactory::getFromName("varintgb");
+        create_collection(input, output_filename, codec);
     } else {
         std::cerr << "Unknown type" << std::endl;
     }
