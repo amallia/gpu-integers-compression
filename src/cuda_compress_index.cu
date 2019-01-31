@@ -6,9 +6,10 @@
 
 using namespace gpu_ic;
 
-template <typename InputCollection, typename Codec>
+template <typename InputCollection, typename Encoder>
 void create_collection(InputCollection const &input,
-                       const std::string &output_filename) {
+                       const std::string &output_filename,
+		       const Encoder &encode_function) {
     std::ofstream fout(output_filename, std::ios::binary);
 
     std::vector<uint8_t> payload;
@@ -32,8 +33,8 @@ void create_collection(InputCollection const &input,
                 values[i] = doc - last_doc - 1;
                 last_doc = doc;
             }
-            auto compressedsize = Codec::encode(encoded_values.data(), values.data(), values.size());
-            payload.insert(payload.end(), encoded_values.data(), encoded_values.data() + compressedsize*4);
+            auto compressedsize = encode_function(encoded_values.data(), values.data(), values.size());
+            payload.insert(payload.end(), encoded_values.data(), encoded_values.data() + compressedsize);
             postings += size;
             endpoints.push_back(encoded_values.size());
             progress.update(1);
@@ -65,9 +66,9 @@ int main(int argc, char** argv) {
 
     binary_freq_collection input(input_basename.c_str());
     if (type == "cuda_bp") {
-    //    create_collection<binary_freq_collection, cuda_bp>(input, output_filename);
+        create_collection(input, output_filename, cuda_bp::encode<>);
     } else if (type == "cuda_vbyte") {
-    //    create_collection<binary_freq_collection, cuda_vbyte>(input, output_filename);
+        create_collection(input, output_filename, cuda_vbyte::encode<>);
     } else {
         std::cerr << "Unknown type" << std::endl;
     }
