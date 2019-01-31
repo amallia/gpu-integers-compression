@@ -19,8 +19,6 @@ void create_collection(InputCollection const &input,
         pisa::progress progress("Create index", input.size());
 
         for (auto const &plist : input) {
-
-
             size_t size = plist.docs.size();
             std::vector<uint32_t> values(size);
             std::vector<uint8_t> encoded_values(size*4+1024);
@@ -40,9 +38,16 @@ void create_collection(InputCollection const &input,
             progress.update(1);
         }
     }
+    uint32_t endpoints_size = endpoints.size();
+    fout.write((const char*)&endpoints_size, 4);
+    fout.write((const char*)endpoints.data(), endpoints_size);
+
     size_t docs_size = payload.size();
-    double bits_per_doc  = docs_size * 8.0 / postings;
-    std::cout << "Documents: " << postings << ", bytes: " << docs_size << ", bits/doc: " << bits_per_doc << std::endl;
+    fout.write((const char*)&docs_size, 4);
+    fout.write((const char*)payload.data(), docs_size);
+
+    double bits_per_doc  = fout.tellp()*8.0 / postings;
+    std::cout << "Documents: " << postings << ", bytes: " << fout.tellp() << ", bits/doc: " << bits_per_doc << std::endl;
 }
 
 int main(int argc, char const *argv[])
