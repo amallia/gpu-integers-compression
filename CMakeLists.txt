@@ -47,7 +47,7 @@ target_link_libraries(gpu_integers_compression INTERFACE
 )
 
 if (BUILD_CUDA)
-    set(CMAKE_CUDA_STANDARD 11)
+    set(CMAKE_CUDA_STANDARD 14)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
     find_package(CUDA)
     CUDA_SELECT_NVCC_ARCH_FLAGS(ARCH_FLAGS "Auto")

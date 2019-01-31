@@ -50,7 +50,7 @@ void create_collection(InputCollection const &input,
     std::cout << "Documents: " << postings << ", bytes: " << fout.tellp() << ", bits/doc: " << bits_per_doc << std::endl;
 }
 
-int main(int argc, char const *argv[])
+int main(int argc, char** argv) {                                     
 {
     std::string type;
     std::string input_basename;
