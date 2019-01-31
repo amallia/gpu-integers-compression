@@ -1,10 +1,11 @@
 #include "CLI/CLI.hpp"
-#include "gpu_ic/cuda_bp.cuh"
 #include "gpu_ic/utils/binary_freq_collection.hpp"
 #include "gpu_ic/utils/progress.hpp"
+#include "gpu_ic/cuda_bp.cuh"
+#include "gpu_ic/cuda_vbyte.cuh"
 
 using namespace gpu_ic;
-using namespace FastPForLib;
+
 template <typename InputCollection, typename Codec>
 void create_collection(InputCollection const &input,
                        const std::string &output_filename) {
@@ -64,12 +65,12 @@ int main(int argc, char** argv) {
 
     binary_freq_collection input(input_basename.c_str());
     if (type == "cuda_bp") {
-        create_collection<binary_freq_collection, cuda_bp>(input, output_filename);
+    //    create_collection<binary_freq_collection, cuda_bp>(input, output_filename);
     } else if (type == "cuda_vbyte") {
-        create_collection<binary_freq_collection, cuda_vbyte>(input, output_filename);
+    //    create_collection<binary_freq_collection, cuda_vbyte>(input, output_filename);
     } else {
         std::cerr << "Unknown type" << std::endl;
     }
+}
 
-    return 0;
 }

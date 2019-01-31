@@ -5,6 +5,7 @@
 #include <iterator>
 #include <stdexcept>
 #include <type_traits>
+#include <cassert>
 
 #include "mio/mmap.hpp"
 
@@ -82,9 +83,9 @@ namespace gpu_ic {
            public:
             base_iterator() : m_collection(nullptr) {}
 
-            auto const &operator*() const { return m_cur_seq; }
+            S const &operator*() const { return m_cur_seq; }
 
-            auto const *operator-> () const { return &m_cur_seq; }
+            S const *operator-> () const { return &m_cur_seq; }
 
             base_iterator &operator++() {
                 m_pos = m_next_pos;

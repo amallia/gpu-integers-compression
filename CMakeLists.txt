@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(gpu_integers_compression)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 option(BUILD_CUDA "Build the CUDA library" ON)
@@ -47,8 +47,11 @@ target_link_libraries(gpu_integers_compression INTERFACE
 )
 
 if (BUILD_CUDA)
-    set(CMAKE_CUDA_STANDARD 14)
+    set(CMAKE_CUDA_STANDARD 11)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+    set(CMAKE_CUDA_EXTENSIONS OFF)
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --std=c++11")
+
     find_package(CUDA)
     CUDA_SELECT_NVCC_ARCH_FLAGS(ARCH_FLAGS "Auto")
     list(APPEND CUDA_NVCC_FLAGS ${ARCH_FLAGS})
