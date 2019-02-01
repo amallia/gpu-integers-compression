@@ -3,7 +3,7 @@
 #include "mappable_vector.hpp"
 #include "bit_vector.hpp"
 
-// #include "block_posting_list.hpp"
+#include "posting_list.hpp"
 
 namespace gpu_ic {
 
@@ -22,44 +22,21 @@ namespace gpu_ic {
                 m_endpoints.push_back(0);
             }
 
-            template <typename DocsIterator, typename FreqsIterator>
-            void add_posting_list(uint64_t n, DocsIterator docs_begin,
-                                  FreqsIterator freqs_begin, uint64_t /* occurrences */)
+            template <typename DocsIterator, typename Codec>
+            void add_posting_list(uint64_t n, DocsIterator docs_begin, Codec codec)
             {
                 if (!n) throw std::invalid_argument("List must be nonempty");
-                // block_posting_list<BlockCodec, Profile>::write(m_lists, n,
-                                                               // docs_begin, freqs_begin);
+                posting_list::write(m_lists, n, docs_begin, codec);
                 m_endpoints.push_back(m_lists.size());
             }
 
-            template <typename BlockDataRange>
-            void add_posting_list(uint64_t n, BlockDataRange const& blocks)
-            {
-                if (!n) throw std::invalid_argument("List must be nonempty");
-                // block_posting_list<BlockCodec>::write_blocks(m_lists, n, blocks);
-                m_endpoints.push_back(m_lists.size());
-            }
-
-            template <typename BytesRange>
-            void add_posting_list(BytesRange const& data)
-            {
-                m_lists.insert(m_lists.end(), std::begin(data), std::end(data));
-                m_endpoints.push_back(m_lists.size());
-            }
 
             void build(index& sq)
             {
                 sq.m_size = m_endpoints.size() - 1;
                 sq.m_num_docs = m_num_docs;
                 sq.m_lists.steal(m_lists);
-
                 sq.m_endpoints.steal(m_endpoints);
-
-                // bit_vector_builder bvb;
-                // compact_elias_fano::write(bvb, m_endpoints.begin(),
-                //                           sq.m_lists.size(), sq.m_size,
-                //                           m_params); // XXX
-                // bit_vector(&bvb).swap(sq.m_endpoints);
             }
 
         private:

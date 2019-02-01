@@ -5,7 +5,7 @@
 
 #include "mio/mmap.hpp"
 
-#include "succinct/mappable_vector.hpp"
+#include "mappable_vector.hpp"
 
 namespace gpu_ic {
 namespace mapper {
