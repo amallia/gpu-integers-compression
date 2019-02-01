@@ -69,25 +69,25 @@ namespace gpu_ic {
             return document_enumerator(m_lists.data() + endpoint, len, m_codec);
         }
 
-        // void warmup(size_t i) const
-        // {
-        //     assert(i < size());
+        void warmup(size_t i) const
+        {
+            assert(i < size());
         //     compact_elias_fano::enumerator endpoints(m_endpoints, 0,
         //                                              m_lists.size(), m_size,
         //                                              m_params);
 
-        //     auto begin = endpoints.move(i).second;
-        //     auto end = m_lists.size();
-        //     if (i + 1 != size()) {
-        //         end = endpoints.move(i + 1).second;
-        //     }
+            auto begin = m_endpoints[i];
+            auto end = m_lists.size();
+            if (i + 1 != size()) {
+                end = m_endpoints[i + 1];
+            }
 
-        //     volatile uint32_t tmp;
-        //     for (size_t i = begin; i != end; ++i) {
-        //         tmp = m_lists[i];
-        //     }
-        //     (void)tmp;
-        // }
+            volatile uint32_t tmp;
+            for (size_t i = begin; i != end; ++i) {
+                tmp = m_lists[i];
+            }
+            (void)tmp;
+        }
 
         void swap(index& other)
         {
