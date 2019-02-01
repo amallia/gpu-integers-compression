@@ -103,8 +103,7 @@ namespace gpu_ic {
                 (m_size, "m_size")
                 (m_num_docs, "m_num_docs")
                 (m_endpoints, "m_endpoints")
-                (m_lists, "m_lists")
-                ;
+                (m_lists, "m_lists");
         }
 
     private:

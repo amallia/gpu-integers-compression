@@ -47,10 +47,10 @@ void verify_index(InputCollection const &input,
             for (int j = 0; j < plist.docs.size(); ++j)
             {
 
-                // if(values[j] != e.docid()) {
-                    // std::cerr << "Error: wrong decoded value. List: " << i << ", position: " << j << ", element: " << e.docid() << ", real_element: " << values[j] << std::endl;
-                    // std::abort();
-                // }
+                if(values[j] != e.docid()) {
+                    std::cerr << "Error: wrong decoded value. List: " << i << ", position: " << j << ", element: " << e.docid() << ", real_element: " << values[j] << std::endl;
+                    std::abort();
+                }
                 e.next();
             }
             progress.update(1);

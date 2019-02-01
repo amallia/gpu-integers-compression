@@ -43,7 +43,7 @@ namespace gpu_ic {
             void next()
             {
                 ++m_pos_in_block;
-                m_cur_docid += m_docs_buf[m_pos_in_block];
+                m_cur_docid = m_docs_buf[m_pos_in_block];
             }
 
 
@@ -69,8 +69,8 @@ namespace gpu_ic {
             void decode_docs_block(Codec codec)
             {
 
-                size_t n =0;
-                codec.decodeArray(reinterpret_cast<uint32_t const *>(m_base), m_len, reinterpret_cast<uint32_t*>(m_docs_buf.data()), n);
+                size_t n =m_n;
+                codec.decodeArray(reinterpret_cast<uint32_t const *>(m_base), m_len/4, reinterpret_cast<uint32_t*>(m_docs_buf.data()), n);
 
                 m_pos_in_block = 0;
                 m_cur_docid = m_docs_buf[0];

@@ -82,20 +82,4 @@ class tight_variable_byte {
         }
         return inbyte;
     }
-
-    static void decode(const uint8_t *in, uint32_t *out, size_t len, size_t &n) {
-        const uint8_t *inbyte = in;
-        while (inbyte < in + len) {
-            unsigned int shift = 0;
-            for (uint32_t v = 0;; shift += 7) {
-                uint8_t c = *inbyte++;
-                v += ((c & 127) << shift);
-                if ((c & 128)) {
-                    *out++ = v;
-                    n += 1;
-                    break;
-                }
-            }
-        }
-    }
 };
