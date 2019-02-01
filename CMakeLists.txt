@@ -44,6 +44,7 @@ target_include_directories(gpu_integers_compression INTERFACE
 target_link_libraries(gpu_integers_compression INTERFACE
     mio
     FastPFor
+    Boost::boost
 )
 
 if (BUILD_CUDA)

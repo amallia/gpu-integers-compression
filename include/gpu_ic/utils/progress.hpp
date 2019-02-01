@@ -5,7 +5,7 @@
 #include <iostream>
 #include <thread>
 
-namespace pisa {
+namespace gpu_ic {
 
 class progress {
 

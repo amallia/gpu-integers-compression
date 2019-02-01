@@ -63,7 +63,6 @@ class bit_istream {
         size_t   i   = 0;
         while (read_bit()) {
             val |= read(7) << (7 * i++);
-            ;
         }
         val |= read(7) << (7 * i);
         return val;

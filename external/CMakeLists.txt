@@ -17,6 +17,9 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/CLI11 EXCLUDE_FROM_ALL)
 # Add mio
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/mio EXCLUDE_FROM_ALL)
 
+# Add cereal
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/boost-cmake EXCLUDE_FROM_ALL)
+
 if (BUILD_CUDA)
 add_library(cub INTERFACE)
 target_include_directories(cub INTERFACE

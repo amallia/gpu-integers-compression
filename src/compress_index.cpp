@@ -3,62 +3,107 @@
 #include "gpu_ic/utils/binary_freq_collection.hpp"
 #include "gpu_ic/utils/progress.hpp"
 #include "gpu_ic/utils/bit_ostream.hpp"
+#include "gpu_ic/utils/bit_istream.hpp"
+#include "gpu_ic/utils/tight_variable_byte.hpp"
+#include "gpu_ic/utils/index.hpp"
 
 using namespace gpu_ic;
 using namespace FastPForLib;
+
+template <typename InputCollection, typename Codec>
+void verify_index(InputCollection const &input,
+                       const std::string &output_filename,
+                       Codec &codec) {
+
+    std::ifstream fin(output_filename, std::ios::binary);
+
+    uint64_t endpoints_size;
+    fin.read((char*)&endpoints_size, 8);
+    std::vector<uint32_t> endpoints(endpoints_size);
+    fin.read((char*)endpoints.data(), endpoints_size);
+
+    uint64_t docs_size;
+    fin.read((char*)&docs_size, 8);
+    std::vector<uint8_t> payload(docs_size);
+    fin.read((char*)payload.data(), docs_size);
+
+    {
+        progress progress("Create index", input.size());
+
+        size_t i =0;
+        for (auto const &plist : input) {
+            size_t start = endpoints[i];
+            size_t len = endpoints[i+1] - start;
+
+            uint32_t n;
+            const uint8_t * p = tight_variable_byte::decode(payload.data()+start, &n, 1);
+
+            std::cerr << start << std::endl;
+            if(n != plist.docs.size())
+            {
+                std::cerr << "Error: wrong list length. List: " << i << ", size: " << n << ", real_size: " << plist.docs.size() << std::endl;
+                std::abort();
+            }
+
+            auto docs_it = plist.docs.begin();
+
+            std::vector<uint32_t> values(plist.docs.size());
+            uint32_t last_doc = 0;
+            for (size_t j = 0; j < plist.docs.size(); ++j) {
+                uint32_t doc(*docs_it++);
+                values[j] = doc - last_doc - 1;
+                last_doc = doc;
+            }
+            std::vector<uint32_t> decoded_values(n);
+            // size_t nn = n;
+            // codec.decodeArray(reinterpret_cast<uint32_t const *>(p), len, reinterpret_cast<uint32_t*>(decoded_values.data()), nn);
+
+            // for (int j = 0; j < plist.docs.size(); ++j)
+            // {
+            //     if(values[j] != decoded_values[j]) {
+            //         std::cerr << "Error: wrong decoded value. List: " << i << ", position: " << j << ", element: " << decoded_values[j] << ", real_element: " << values[j] << std::endl;
+            //         std::abort();
+            //     }
+            // }
+
+            progress.update(1);
+            i+=1;
+        }
+    }
+
+}
+
 template <typename InputCollection, typename Codec>
 void create_collection(InputCollection const &input,
                        const std::string &output_filename,
                        Codec &codec) {
-    std::ofstream fout(output_filename, std::ios::binary);
 
-    std::vector<uint8_t> payload;
-    std::vector<uint32_t> endpoints;
-    endpoints.push_back(0);
-
+    index::builder builder(input.num_docs());
     size_t postings = 0;
     {
-        pisa::progress progress("Create index", input.size());
+        progress progress("Create index", input.size());
 
         for (auto const &plist : input) {
             size_t size = plist.docs.size();
-
-            std::vector<uint8_t> len(5);
-            bit_ostream bw(len.data());
-            bw.write_vbyte(size);
-            payload.insert(payload.end(), len.data(), len.data() + bw.size()/8);
-
-            std::vector<uint32_t> values(size);
-            std::vector<uint8_t> encoded_values(size*4+1024);
-
-            auto docs_it = plist.docs.begin();
-
-            uint32_t last_doc = 0;
-            for (size_t i = 0; i < size; ++i) {
-                uint32_t doc(*docs_it++);
-                values[i] = doc - last_doc - 1;
-                last_doc = doc;
-            }
-            size_t compressedsize = 0;
-            codec.encodeArray(values.data(), values.size(), reinterpret_cast<uint32_t*>(encoded_values.data()), compressedsize);
-            payload.insert(payload.end(), encoded_values.data(), encoded_values.data() + compressedsize*4);
+            builder.add_posting_list(size, plist.docs.begin());
             postings += size;
-            endpoints.push_back(encoded_values.size());
             progress.update(1);
         }
     }
 
-    uint32_t endpoints_size = endpoints.size();
-    fout.write((const char*)&endpoints_size, 4);
-    fout.write((const char*)endpoints.data(), endpoints_size);
+    index coll;
+    builder.build(coll);
+    mapper::freeze(coll, output_filename.c_str());
 
-    size_t docs_size = payload.size();
-    fout.write((const char*)&docs_size, 4);
-    fout.write((const char*)payload.data(), docs_size);
 
-    double bits_per_doc  = fout.tellp()*8.0 / postings;
-    std::cout << "Documents: " << postings << ", bytes: " << fout.tellp() << ", bits/doc: " << bits_per_doc << std::endl;
+    // double bits_per_doc  = fout.tellp()*8.0 / postings;
+    // std::cout << "Documents: " << postings << ", bytes: " << fout.tellp() << ", bits/doc: " << bits_per_doc << std::endl;
+
+    verify_index(input, output_filename, codec);
 }
+
+
+
 
 int main(int argc, char const *argv[])
 {
