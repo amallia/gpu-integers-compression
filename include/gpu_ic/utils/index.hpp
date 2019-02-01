@@ -5,9 +5,13 @@
 
 #include "posting_list.hpp"
 
+
+
+
 namespace gpu_ic {
 
     // template <typename BlockCodec>
+    template <typename Codec>
     class index {
     public:
         index()
@@ -22,7 +26,7 @@ namespace gpu_ic {
                 m_endpoints.push_back(0);
             }
 
-            template <typename DocsIterator, typename Codec>
+            template <typename DocsIterator>
             void add_posting_list(uint64_t n, DocsIterator docs_begin, Codec codec)
             {
                 if (!n) throw std::invalid_argument("List must be nonempty");
@@ -55,19 +59,15 @@ namespace gpu_ic {
             return m_num_docs;
         }
 
-        // typedef typename block_posting_list<BlockCodec, Profile>::document_enumerator document_enumerator;
+        typedef typename posting_list::document_enumerator document_enumerator;
 
-        // document_enumerator operator[](size_t i) const
-        // {
-        //     assert(i < size());
-        //     // compact_elias_fano::enumerator endpoints(m_endpoints, 0,
-        //     //                                          m_lists.size(), m_size,
-        //     //                                          m_params);
-
-        //     // auto endpoint = endpoints.move(i).second;
-        //     auto endpoint = m_endpoints[i];
-        //     return document_enumerator(m_lists.data() + endpoint, num_docs(), i);
-        // }
+        document_enumerator operator[](size_t i) const
+        {
+            assert(i < size());
+            auto endpoint = m_endpoints[i];
+            auto len =   m_endpoints[i+1] - endpoint;
+            return document_enumerator(m_lists.data() + endpoint, len, m_codec);
+        }
 
         // void warmup(size_t i) const
         // {
@@ -110,8 +110,8 @@ namespace gpu_ic {
     private:
         size_t m_size;
         size_t m_num_docs;
-        // bit_vector m_endpoints;
         mapper::mappable_vector<uint64_t> m_endpoints;
         mapper::mappable_vector<uint8_t> m_lists;
+        Codec m_codec;
     };
 }

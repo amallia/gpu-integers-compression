@@ -7,79 +7,65 @@
 #include "gpu_ic/utils/tight_variable_byte.hpp"
 #include "gpu_ic/utils/index.hpp"
 #include "gpu_ic/utils/mapper.hpp"
+#include "mio/mmap.hpp"
 
 using namespace gpu_ic;
 using namespace FastPForLib;
 
-// template <typename InputCollection, typename Codec>
-// void verify_index(InputCollection const &input,
-//                        const std::string &output_filename,
-//                        Codec &codec) {
+template <typename InputCollection, typename Codec>
+void verify_index(InputCollection const &input,
+                       const std::string &filename) {
 
-//     std::ifstream fin(output_filename, std::ios::binary);
+    gpu_ic::index<Codec> coll;
+    mio::mmap_source m(filename);
+    mapper::map(coll, m);
 
-//     uint64_t endpoints_size;
-//     fin.read((char*)&endpoints_size, 8);
-//     std::vector<uint32_t> endpoints(endpoints_size);
-//     fin.read((char*)endpoints.data(), endpoints_size);
+    {
+        progress progress("Verify index", input.size());
 
-//     uint64_t docs_size;
-//     fin.read((char*)&docs_size, 8);
-//     std::vector<uint8_t> payload(docs_size);
-//     fin.read((char*)payload.data(), docs_size);
+        size_t i =0;
+        for (auto const &plist : input) {
 
-//     {
-//         progress progress("Create index", input.size());
+            auto e = coll[i];
 
-//         size_t i =0;
-//         for (auto const &plist : input) {
-//             size_t start = endpoints[i];
-//             size_t len = endpoints[i+1] - start;
+            if(e.size() != plist.docs.size())
+            {
+                std::cerr << "Error: wrong list length. List: " << i << ", size: " << e.size() << ", real_size: " << plist.docs.size() << std::endl;
+                std::abort();
+            }
 
-//             uint32_t n;
-//             const uint8_t * p = tight_variable_byte::decode(payload.data()+start, &n, 1);
+            auto docs_it = plist.docs.begin();
 
-//             std::cerr << start << std::endl;
-//             if(n != plist.docs.size())
-//             {
-//                 std::cerr << "Error: wrong list length. List: " << i << ", size: " << n << ", real_size: " << plist.docs.size() << std::endl;
-//                 std::abort();
-//             }
+            std::vector<uint32_t> values(plist.docs.size());
+            uint32_t last_doc(*docs_it++);;
+            for (size_t j = 1; j < plist.docs.size(); ++j) {
+                uint32_t doc(*docs_it++);
+                values[j] = doc - last_doc - 1;
+                last_doc = doc;
+            }
 
-//             auto docs_it = plist.docs.begin();
+            for (int j = 0; j < plist.docs.size(); ++j)
+            {
 
-//             std::vector<uint32_t> values(plist.docs.size());
-//             uint32_t last_doc = 0;
-//             for (size_t j = 0; j < plist.docs.size(); ++j) {
-//                 uint32_t doc(*docs_it++);
-//                 values[j] = doc - last_doc - 1;
-//                 last_doc = doc;
-//             }
-//             std::vector<uint32_t> decoded_values(n);
-//             // size_t nn = n;
-//             // codec.decodeArray(reinterpret_cast<uint32_t const *>(p), len, reinterpret_cast<uint32_t*>(decoded_values.data()), nn);
+                // if(values[j] != e.docid()) {
+                    // std::cerr << "Error: wrong decoded value. List: " << i << ", position: " << j << ", element: " << e.docid() << ", real_element: " << values[j] << std::endl;
+                    // std::abort();
+                // }
+                e.next();
+            }
+            progress.update(1);
+            i+=1;
+        }
+    }
 
-//             // for (int j = 0; j < plist.docs.size(); ++j)
-//             // {
-//             //     if(values[j] != decoded_values[j]) {
-//             //         std::cerr << "Error: wrong decoded value. List: " << i << ", position: " << j << ", element: " << decoded_values[j] << ", real_element: " << values[j] << std::endl;
-//             //         std::abort();
-//             //     }
-//             // }
-
-//             progress.update(1);
-//             i+=1;
-//         }
-//     }
-
-// }
+}
 
 template <typename InputCollection, typename Codec>
 void create_collection(InputCollection const &input,
                        const std::string &output_filename,
                        Codec &codec) {
 
-    gpu_ic::index::builder builder(input.num_docs());
+    typename gpu_ic::index<Codec>::builder builder(input.num_docs());
     size_t postings = 0;
     {
         progress progress("Create index", input.size());
@@ -92,7 +78,7 @@ void create_collection(InputCollection const &input,
         }
     }
 
-    gpu_ic::index coll;
+    gpu_ic::index<Codec> coll;
     builder.build(coll);
     auto byte= mapper::freeze(coll, output_filename.c_str());
 
@@ -100,7 +86,7 @@ void create_collection(InputCollection const &input,
     double bits_per_doc  = byte * 8.0 / postings;
     std::cout << "Documents: " << postings << ", bytes: " << byte << ", bits/doc: " << bits_per_doc << std::endl;
 
-    // verify_index(input, output_filename, codec);
+    verify_index<InputCollection, Codec>(input, output_filename);
 }
 
 
