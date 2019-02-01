@@ -22,7 +22,13 @@ void create_collection(InputCollection const &input,
 
         for (auto const &plist : input) {
             size_t size = plist.docs.size();
-            std::vector<uint32_t> values(size);
+
+            std::vector<uint8_t> len(5);
+            bit_ostream bw(len.data());
+            bw.write_vbyte(size);
+            payload.insert(payload.end(), len.data(), len.data() + bw.size()/8);
+
+	    std::vector<uint32_t> values(size);
             std::vector<uint8_t> encoded_values(size*4+1024);
 
             auto docs_it = plist.docs.begin();
