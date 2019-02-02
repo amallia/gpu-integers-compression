@@ -20,7 +20,9 @@ template<typename Codec>
 void perftest(const std::string &filename)
 {
     gpu_ic::index<Codec> coll;
-    mio::mmap_source m(filename);
+    mio::mmap_source m;
+    std::error_code error;
+    m.map(filename, error);
     mapper::map(coll, m);
 
     size_t min_length = pow(2, 15); ;
