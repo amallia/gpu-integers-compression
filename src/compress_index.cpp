@@ -92,8 +92,6 @@ void create_collection(InputCollection const &input,
 }
 
 
-
-
 int main(int argc, char const *argv[])
 {
     std::string type;
