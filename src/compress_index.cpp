@@ -17,7 +17,9 @@ void verify_index(InputCollection const &input,
                        const std::string &filename) {
 
     gpu_ic::index<Codec> coll;
-    mio::mmap_source m(filename);
+    mio::mmap_source m;
+    std::error_code error;
+    m.map(filename, error);
     mapper::map(coll, m);
 
     {
