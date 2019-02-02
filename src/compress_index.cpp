@@ -16,6 +16,7 @@ template <typename InputCollection, typename Codec>
 void verify_index(InputCollection const &input,
                        const std::string &filename) {
 
+    Codec codec;
     gpu_ic::index<Codec> coll;
     mio::mmap_source m;
     std::error_code error;
@@ -27,15 +28,6 @@ void verify_index(InputCollection const &input,
 
         size_t i =0;
         for (auto const &plist : input) {
-
-            auto e = coll[i];
-
-            if(e.size() != plist.docs.size())
-            {
-                std::cerr << "Error: wrong list length. List: " << i << ", size: " << e.size() << ", real_size: " << plist.docs.size() << std::endl;
-                std::abort();
-            }
-
             auto docs_it = plist.docs.begin();
 
             std::vector<uint32_t> values(plist.docs.size());
@@ -46,14 +38,22 @@ void verify_index(InputCollection const &input,
                 last_doc = doc;
             }
 
-            for (int j = 0; j < plist.docs.size(); ++j)
-            {
+            std::vector<uint8_t> tmp;
+            auto n = coll.get_data(tmp, i);
+            std::vector<uint32_t> decode_values(n);
+            codec.decodeArray(reinterpret_cast<uint32_t const *>(tmp.data()), tmp.size()/4, reinterpret_cast<uint32_t*>(decode_values.data()), n);
 
-                if(values[j] != e.docid()) {
-                    std::cerr << "Error: wrong decoded value. List: " << i << ", position: " << j << ", element: " << e.docid() << ", real_element: " << values[j] << std::endl;
+            if(n != plist.docs.size())
+            {
+                std::cerr << "Error: wrong list length. List: " << i << ", size: " << n << ", real_size: " << plist.docs.size() << std::endl;
+                std::abort();
+            }
+
+            for (size_t j = 0; j < n; ++j) {
+                if(decode_values[j] != values[j]) {
+                    std::cerr << "Error: wrong decoded value. List: " << i << ", position: " << j << ", element: " << decode_values[j] << ", real_element: " << values[j] << std::endl;
                     std::abort();
                 }
-                e.next();
             }
             progress.update(1);
             i+=1;
