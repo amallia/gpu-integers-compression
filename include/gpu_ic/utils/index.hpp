@@ -69,6 +69,15 @@ namespace gpu_ic {
             return document_enumerator(m_lists.data() + endpoint, len, m_codec);
         }
 
+        size_t get_data(std::vector<uint8_t> &data, size_t i) const
+        {
+            assert(i < size());
+            uint32_t n;
+            auto data_begin = tight_variable_byte::decode(m_lists.data() + m_endpoints[i], &n, 1);
+            data.insert(data.end(), data_begin, m_lists.data() + m_endpoints[i+1] );
+            return n;
+        }
+
         void warmup(size_t i) const
         {
             assert(i < size());

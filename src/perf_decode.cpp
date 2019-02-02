@@ -19,6 +19,7 @@ using clock_type = std::chrono::high_resolution_clock;
 template<typename Codec>
 void perftest(const std::string &filename)
 {
+    Codec codec;
     gpu_ic::index<Codec> coll;
     mio::mmap_source m;
     std::error_code error;
@@ -28,29 +29,32 @@ void perftest(const std::string &filename)
     size_t min_length = pow(2, 15); ;
     size_t max_number_of_lists = 500000000;
 
-    std::vector<size_t> long_lists;
+    std::vector<std::pair<size_t, std::vector<uint8_t>>> long_lists;
     long_lists.reserve(max_number_of_lists);
-    std::cout << "warming up " << coll.size() << " posting lists" << std::endl;
     for (size_t i = 0; i < coll.size() and long_lists.size() <= max_number_of_lists; ++i) {
-        if (coll[i].size() >= min_length) {
-            long_lists.push_back(i);
-            coll.warmup(i);
+        std::vector<uint8_t> tmp;
+        auto n = coll.get_data(tmp, i);
+        if (n >= min_length) {
+            long_lists.push_back(std::make_pair(n, tmp));
         }
     }
     std::cout << "Scanning " << long_lists.size() << " posting lists, whose length is between " << min_length << std::endl;
     std::chrono::duration<double> elapsed(0);
     size_t postings = 0;
     for (auto i: long_lists) {
+        std::vector<uint32_t> decode_values(i.first);
     	auto start = clock_type::now();
-        auto reader = coll[i];
+        size_t n = 0;
+        codec.decodeArray(reinterpret_cast<uint32_t const *>(i.second.data()), i.second.size()/4, reinterpret_cast<uint32_t*>(decode_values.data()), n);
     	auto end = clock_type::now();
     	elapsed += end - start;
-    	size_t size = reader.size();
-        for (size_t i = 0; i < size; ++i) {
-            reader.next();
-            utils::do_not_optimize_away(reader.docid());
+        if(n != i.first) {
+            std::cerr << "Error: number of decoded values " << n << ", actual number of values" << i.first << std::endl;
         }
-        postings += size;
+        for (size_t i = 0; i < n; ++i) {
+            utils::do_not_optimize_away(decode_values[i]);
+        }
+        postings += decode_values.size();
     }
 
     double next_ns = elapsed.count() / postings * 1000000000;
