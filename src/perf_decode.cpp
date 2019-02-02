@@ -10,6 +10,7 @@
 #include "gpu_ic/utils/utils.hpp"
 #include "mio/mmap.hpp"
 #include <chrono>
+#include <cmath>
 
 using namespace gpu_ic;
 using namespace FastPForLib;
@@ -22,33 +23,33 @@ void perftest(const std::string &filename)
     mio::mmap_source m(filename);
     mapper::map(coll, m);
 
-    size_t min_length =  500;
-    size_t max_length = 5000000;
-    size_t max_number_of_lists = 5000;
+    size_t min_length = pow(2, 15); ;
+    size_t max_number_of_lists = 500000000;
 
     std::vector<size_t> long_lists;
     long_lists.reserve(max_number_of_lists);
     std::cout << "warming up " << coll.size() << " posting lists" << std::endl;
     for (size_t i = 0; i < coll.size() and long_lists.size() <= max_number_of_lists; ++i) {
-        if (coll[i].size() >= min_length and coll[i].size() < max_length) {
+        if (coll[i].size() >= min_length) {
             long_lists.push_back(i);
             coll.warmup(i);
         }
     }
-    std::cout << "Scanning " << long_lists.size() << " posting lists, whose length is between " << min_length << " and " << max_length << std::endl;
-    auto start = clock_type::now();
+    std::cout << "Scanning " << long_lists.size() << " posting lists, whose length is between " << min_length << std::endl;
+    std::chrono::duration<double> elapsed(0);
     size_t postings = 0;
     for (auto i: long_lists) {
+    	auto start = clock_type::now();
         auto reader = coll[i];
-        size_t size = reader.size();
+    	auto end = clock_type::now();
+    	elapsed += end - start;
+    	size_t size = reader.size();
         for (size_t i = 0; i < size; ++i) {
             reader.next();
             utils::do_not_optimize_away(reader.docid());
         }
         postings += size;
     }
-    auto end = clock_type::now();
-    std::chrono::duration<double> elapsed = end - start;
 
     double next_ns = elapsed.count() / postings * 1000000000;
     double b_int_s = postings / elapsed.count() / 1000000;
