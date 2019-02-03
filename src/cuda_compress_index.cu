@@ -1,25 +1,26 @@
 #include "CLI/CLI.hpp"
 #include "gpu_ic/utils/binary_freq_collection.hpp"
 #include "gpu_ic/utils/progress.hpp"
+#include "gpu_ic/utils/tight_variable_byte.hpp"
+#include "gpu_ic/utils/index.cuh"
+#include "gpu_ic/utils/mapper.hpp"
+#include "mio/mmap.hpp"
 #include "gpu_ic/cuda_bp.cuh"
 #include "gpu_ic/cuda_vbyte.cuh"
-#include "gpu_ic/utils/cuda_utils.hpp"
 
 using namespace gpu_ic;
 
-template <typename InputCollection, typename Codec>
+template <typename InputCollection, typename Decoder>
 void verify_index(InputCollection const &input,
-                       const std::string &filename) {
+                       const std::string &filename, Decoder decoder_function) {
 
-
+//     Codec codec;
+    gpu_ic::index coll;
     mio::mmap_source m;
     std::error_code error;
     m.map(filename, error);
-    uint32_t endpoints_size;
-    std::copy(m.data(), m.data() + 4, &endpoints_size);
-    std::vector<uint64_t> endpoints(endpoints_size);
-    std::copy(m.data() + 4, m.data() + 4 + 8*endpoints_size,  endpoints.data());
-    auto payload = m.data() + 4 + 8*endpoints_size;
+    mapper::map(coll, m);
+
     {
         progress progress("Verify index", input.size());
 
@@ -34,19 +35,25 @@ void verify_index(InputCollection const &input,
                 values[j] = doc - last_doc - 1;
                 last_doc = doc;
             }
-            auto len = endpoints[i+1] - endpoints[i];
-            uint8_t *  d_encoded;
-            CUDA_CHECK_ERROR(cudaMalloc((void **)&d_encoded, len * sizeof(uint8_t)));
 
-            size_t n;
-            auto data_begin = tight_variable_byte::decode(payload + endpoints[i], &n, 1);
-            CUDA_CHECK_ERROR(cudaMemcpy(d_encoded, data_begin, len * sizeof(uint8_t), cudaMemcpyHostToDevice));
-
+            std::vector<uint8_t> tmp;
+            auto n = coll.get_data(tmp, i);
             std::vector<uint32_t> decode_values(n);
+
+            CUDA_CHECK_ERROR(cudaSetDevice(0));
+            warmUpGPU<<<1, 1>>>();
+
+            uint8_t *  d_encoded;
+            CUDA_CHECK_ERROR(cudaMalloc((void **)&d_encoded, tmp.size() * sizeof(uint8_t)));
+            CUDA_CHECK_ERROR(cudaMemcpy(d_encoded, tmp.data(), tmp.size() * sizeof(uint8_t), cudaMemcpyHostToDevice));
+
             uint32_t * d_decoded;
             CUDA_CHECK_ERROR(cudaMalloc((void **)&d_decoded, values.size() * sizeof(uint32_t)));
-            Encoder::decode(d_decoded, d_encoded, decode_values.size());
+            decoder_function(d_decoded, d_encoded, decode_values.size());
             CUDA_CHECK_ERROR(cudaMemcpy(decode_values.data(), d_decoded, values.size() * sizeof(uint32_t), cudaMemcpyDeviceToHost));
+
+            cudaFree(d_encoded);
+            cudaFree(d_decoded);
 
             if(n != plist.docs.size())
             {
@@ -67,63 +74,37 @@ void verify_index(InputCollection const &input,
 
 }
 
-
-
-template <typename InputCollection, typename Encoder>
+template <typename InputCollection, typename Encoder, typename Decoder>
 void create_collection(InputCollection const &input,
                        const std::string &output_filename,
-		       const Encoder &encode_function) {
-    std::ofstream fout(output_filename, std::ios::binary);
+                       Encoder &encoder_function, Decoder &decoder_function) {
 
-    std::vector<uint8_t> payload;
-    std::vector<uint64_t> endpoints;
-    endpoints.push_back(0);
-
+    typename gpu_ic::index::builder builder(input.num_docs());
     size_t postings = 0;
     {
-        pisa::progress progress("Create index", input.size());
+        progress progress("Create index", input.size());
 
         for (auto const &plist : input) {
             size_t size = plist.docs.size();
-
-            std::vector<uint8_t> len(5);
-            bit_ostream bw(len.data());
-            bw.write_vbyte(size);
-            payload.insert(payload.end(), len.data(), len.data() + bw.size()/8);
-
-	        std::vector<uint32_t> values(size);
-            std::vector<uint8_t> encoded_values(size*4+1024);
-
-            auto docs_it = plist.docs.begin();
-
-            uint32_t last_doc = 0;
-            for (size_t i = 0; i < size; ++i) {
-                uint32_t doc(*docs_it++);
-                values[i] = doc - last_doc - 1;
-                last_doc = doc;
-            }
-            auto compressedsize = encode_function(encoded_values.data(), values.data(), values.size());
-            payload.insert(payload.end(), encoded_values.data(), encoded_values.data() + compressedsize);
+            builder.add_posting_list(size, plist.docs.begin(), encoder_function);
             postings += size;
-            endpoints.push_back(encoded_values.size());
             progress.update(1);
         }
     }
-    uint32_t endpoints_size = endpoints.size();
-    fout.write((const char*)&endpoints_size, 4);
-    fout.write((const char*)endpoints.data(), endpoints_size);
 
-    size_t docs_size = payload.size();
-    fout.write((const char*)&docs_size, 4);
-    fout.write((const char*)payload.data(), docs_size);
+    gpu_ic::index coll;
+    builder.build(coll);
+    auto byte= mapper::freeze(coll, output_filename.c_str());
 
-    double bits_per_doc  = fout.tellp()*8.0 / postings;
-    std::cout << "Documents: " << postings << ", bytes: " << fout.tellp() << ", bits/doc: " << bits_per_doc << std::endl;
-    verify_index<InputCollection, Encoder>(input, output_filename);
 
+    double bits_per_doc  = byte * 8.0 / postings;
+    std::cout << "Documents: " << postings << ", bytes: " << byte << ", bits/doc: " << bits_per_doc << std::endl;
+
+    verify_index(input, output_filename, decoder_function);
 }
 
-int main(int argc, char** argv) {
+
+int main(int argc, char** argv)
 {
     std::string type;
     std::string input_basename;
@@ -137,12 +118,12 @@ int main(int argc, char** argv) {
 
     binary_freq_collection input(input_basename.c_str());
     if (type == "cuda_bp") {
-        create_collection(input, output_filename, cuda_bp::encode<>);
+        create_collection(input, output_filename, cuda_bp::encode<>, cuda_bp::decode);
     } else if (type == "cuda_vbyte") {
-        create_collection(input, output_filename, cuda_vbyte::encode<>);
+        create_collection(input, output_filename, cuda_vbyte::encode<>, cuda_vbyte::decode<>);
     } else {
         std::cerr << "Unknown type" << std::endl;
     }
-}
 
+    return 0;
 }
