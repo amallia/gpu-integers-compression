@@ -51,7 +51,7 @@ static size_t encode(uint8_t *out, const uint32_t *in, size_t n) {
         auto b     = i / block_size;
         bw.write(value, bits[b]);
     }
-    return ceil(bw.size() / 8);
+    return ceil((double)bw.size() / 8);
 }
 
 __global__ void kernel_decode(uint32_t *      out,
@@ -67,9 +67,9 @@ __global__ void kernel_decode(uint32_t *      out,
 }
 
 static void decode(uint32_t *d_out, const uint8_t *d_in, size_t n) {
-    size_t         header_len = 4 * (ceil(n / 32) + 1);
+    size_t         header_len = 4 * (ceil((double)n / 32) + 1);
     const uint8_t *d_payload  = d_in + header_len;
-    kernel_decode<<<ceil(n / 32), 32>>>(d_out,
+    kernel_decode<<<ceil((double)n / 32), 32>>>(d_out,
                                         reinterpret_cast<const uint32_t *>(d_payload),
                                         n,
                                         reinterpret_cast<const uint32_t *>(d_in));

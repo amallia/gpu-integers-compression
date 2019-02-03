@@ -37,7 +37,9 @@ namespace gpu_ic {
 
                 std::vector<uint8_t> encoded_values(n*4+1024);
                 size_t compressedsize = encoder_function(encoded_values.data(), docs_buf.data(), docs_buf.size());
-                m_lists.insert(m_lists.end(), encoded_values.data(), encoded_values.data() + compressedsize);
+                encoded_values.resize(compressedsize);
+                encoded_values.shrink_to_fit();
+                m_lists.insert(m_lists.end(), encoded_values.data(), encoded_values.data() + encoded_values.size());
                 m_endpoints.push_back(m_lists.size());
             }
 

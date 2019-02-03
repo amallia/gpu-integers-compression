@@ -38,6 +38,7 @@ void verify_index(InputCollection const &input,
 
             std::vector<uint8_t> tmp;
             auto n = coll.get_data(tmp, i);
+            uint32_t * tt = (uint32_t *)tmp.data();
             std::vector<uint32_t> decode_values(n);
 
             CUDA_CHECK_ERROR(cudaSetDevice(0));
