@@ -16,4 +16,9 @@ target_link_libraries(cuda_compress_index
   gpu_integers_compression
   CLI11
 )
+CUDA_ADD_EXECUTABLE(cuda_perf_decode cuda_perf_decode.cu)
+target_link_libraries(cuda_perf_decode
+  gpu_integers_compression
+  CLI11
+)
 endif()
