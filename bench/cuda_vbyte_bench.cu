@@ -51,7 +51,7 @@ public:
         CUDA_CHECK_ERROR(cudaMemcpy(d_encoded, encoded_values.data(), encoded_values.size() * sizeof(uint8_t), cudaMemcpyHostToDevice));
 
         CUDA_CHECK_ERROR(cudaMalloc((void **)&d_decoded, values.size() * sizeof(uint32_t)));
-
+        CUDA_CHECK_ERROR(cudaDeviceSynchronize());
     }
 
     virtual void TearDown(::benchmark::State&) {
@@ -79,6 +79,7 @@ public:
 BENCHMARK_TEMPLATE_DEFINE_F(ValuesFixture, decodeUniform, gpu_ic::UniformDataGenerator)(benchmark::State& state) {
     while (state.KeepRunning()) {
         cuda_vbyte::decode(d_decoded, d_encoded, decoded_values.size());
+        CUDA_CHECK_ERROR(cudaDeviceSynchronize());
     }
     auto bpi = double(8*encoded_values.size())/decoded_values.size();
     state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);
@@ -89,6 +90,7 @@ BENCHMARK_REGISTER_F(ValuesFixture, decodeUniform)->RangeMultiplier(2)->Range((1
 BENCHMARK_TEMPLATE_DEFINE_F(ValuesFixture, decodeClustered, gpu_ic::ClusteredDataGenerator)(benchmark::State& state) {
     while (state.KeepRunning()) {
         cuda_vbyte::decode(d_decoded, d_encoded, decoded_values.size());
+        CUDA_CHECK_ERROR(cudaDeviceSynchronize());
     }
     auto bpi = double(8*encoded_values.size())/decoded_values.size();
     state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);

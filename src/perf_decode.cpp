@@ -31,7 +31,7 @@ void perftest(const std::string &filename)
 
     std::vector<std::pair<size_t, std::vector<uint8_t>>> long_lists;
     long_lists.reserve(max_number_of_lists);
-    for (size_t i = 0; i < coll.size() and long_lists.size() <= max_number_of_lists; ++i) {
+    for (size_t i = 0; i < coll.size() and long_lists.size() < max_number_of_lists; ++i) {
         std::vector<uint8_t> tmp;
         auto n = coll.get_data(tmp, i);
         if (n >= min_length) {

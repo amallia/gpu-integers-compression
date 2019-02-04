@@ -29,7 +29,7 @@ void perftest(const std::string &filename, Decoder &decoder_function)
 
     std::vector<std::pair<size_t, std::vector<uint8_t>>> long_lists;
     long_lists.reserve(max_number_of_lists);
-    for (size_t i = 0; i < coll.size() and long_lists.size() <= max_number_of_lists; ++i) {
+    for (size_t i = 0; i < coll.size() and long_lists.size() < max_number_of_lists; ++i) {
         std::vector<uint8_t> tmp;
         auto n = coll.get_data(tmp, i);
         if (n >= min_length) {
@@ -49,16 +49,22 @@ void perftest(const std::string &filename, Decoder &decoder_function)
         std::vector<uint32_t> decode_values(i.first);
         uint32_t * d_decoded;
         CUDA_CHECK_ERROR(cudaMalloc((void **)&d_decoded, decode_values.size() * sizeof(uint32_t)));
+        CUDA_CHECK_ERROR(cudaDeviceSynchronize());
+
         auto start = clock_type::now();
         decoder_function(d_decoded, d_encoded, decode_values.size());
+        cudaDeviceSynchronize();
         auto end = clock_type::now();
+
         CUDA_CHECK_ERROR(cudaMemcpy(decode_values.data(), d_decoded, decode_values.size() * sizeof(uint32_t), cudaMemcpyDeviceToHost));
 
-        cudaFree(d_encoded);
-        cudaFree(d_decoded);
+        CUDA_CHECK_ERROR(cudaFree(d_encoded));
+        CUDA_CHECK_ERROR(cudaFree(d_decoded));
 
     	elapsed += end - start;
+
         for (size_t j = 0; j < i.first; ++j) {
+            // std::cerr << decode_values[j] << std::endl;
             utils::do_not_optimize_away(decode_values[j]);
         }
         postings += decode_values.size();
