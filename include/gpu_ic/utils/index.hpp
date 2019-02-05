@@ -27,20 +27,21 @@ namespace gpu_ic {
             }
 
             template <typename DocsIterator>
-            void add_posting_list(uint64_t n, DocsIterator docs_begin, Codec codec)
+            void add_posting_list(uint64_t n, DocsIterator docs_begin, Codec codec, bool compress_freqs)
             {
                 if (!n) throw std::invalid_argument("List must be nonempty");
-                posting_list::write(m_lists, n, docs_begin, codec);
+                posting_list::write(m_lists, n, docs_begin, codec, compress_freqs);
                 m_endpoints.push_back(m_lists.size());
             }
 
 
-            void build(index& sq)
+            size_t build(index& sq)
             {
                 sq.m_size = m_endpoints.size() - 1;
                 sq.m_num_docs = m_num_docs;
                 sq.m_lists.steal(m_lists);
                 sq.m_endpoints.steal(m_endpoints);
+                return sq.m_lists.size();
             }
 
         private:

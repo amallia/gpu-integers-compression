@@ -7,7 +7,7 @@ namespace gpu_ic {
     struct posting_list {
 
         template <typename DocsIterator, typename Codec>
-        static void write(std::vector<uint8_t>& out, uint32_t n, DocsIterator docs_begin, Codec codec) {
+        static void write(std::vector<uint8_t>& out, uint32_t n, DocsIterator docs_begin, Codec codec, bool compress_freqs) {
             tight_variable_byte::encode_single(n, out);
 
             DocsIterator docs_it(docs_begin);
@@ -16,7 +16,12 @@ namespace gpu_ic {
             uint32_t last_doc(*docs_it++);;
             for (size_t i = 1; i < n; ++i) {
                 uint32_t doc(*docs_it++);
-                docs_buf[i] = doc - last_doc - 1;
+                if(not compress_freqs) {
+                    docs_buf[i] = doc - last_doc - 1;
+                }
+                else {
+                    docs_buf[i] = doc - 1;
+                }
                 last_doc = doc;
             }
 
