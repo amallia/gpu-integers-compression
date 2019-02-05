@@ -21,7 +21,7 @@ namespace gpu_ic {
             }
 
             template <typename DocsIterator, typename Encoder>
-            void add_posting_list(uint64_t n, DocsIterator docs_begin, Encoder encoder_function)
+            void add_posting_list(uint64_t n, DocsIterator docs_begin, Encoder encoder_function, bool compress_freqs)
             {
                 if (!n) throw std::invalid_argument("List must be nonempty");
                 tight_variable_byte::encode_single(n, m_lists);
@@ -31,7 +31,11 @@ namespace gpu_ic {
                 uint32_t last_doc(*docs_it++);;
                 for (size_t i = 1; i < n; ++i) {
                     uint32_t doc(*docs_it++);
-                    docs_buf[i] = doc - last_doc - 1;
+                    if(not compress_freqs) {
+                        docs_buf[i] = doc - last_doc - 1;
+                    } else {
+                        docs_buf[i] = doc - 1;
+                    }
                     last_doc = doc;
                 }
 
@@ -44,12 +48,13 @@ namespace gpu_ic {
             }
 
 
-            void build(index& sq)
+            size_t build(index& sq)
             {
                 sq.m_size = m_endpoints.size() - 1;
                 sq.m_num_docs = m_num_docs;
                 sq.m_lists.steal(m_lists);
                 sq.m_endpoints.steal(m_endpoints);
+                return sq.m_lists.size();
             }
 
         private:

@@ -12,7 +12,7 @@ using namespace gpu_ic;
 
 template <typename InputCollection, typename Decoder>
 void verify_index(InputCollection const &input,
-                       const std::string &filename, Decoder decoder_function) {
+                       const std::string &filename, Decoder decoder_function, bool compress_freqs) {
 
 //     Codec codec;
     gpu_ic::index coll;
@@ -26,13 +26,17 @@ void verify_index(InputCollection const &input,
 
         size_t i =0;
         for (auto const &plist : input) {
-            auto docs_it = plist.docs.begin();
+            auto docs_it = compress_freqs ?  plist.freqs.begin() : plist.docs.begin();
 
             std::vector<uint32_t> values(plist.docs.size());
             uint32_t last_doc(*docs_it++);;
             for (size_t j = 1; j < plist.docs.size(); ++j) {
                 uint32_t doc(*docs_it++);
-                values[j] = doc - last_doc - 1;
+                if(not compress_freqs) {
+                   values[j] = doc - last_doc - 1;
+                } else {
+                    values[j] = doc - 1;
+                }
                 last_doc = doc;
             }
 
@@ -77,7 +81,7 @@ void verify_index(InputCollection const &input,
 template <typename InputCollection, typename Encoder, typename Decoder>
 void create_collection(InputCollection const &input,
                        const std::string &output_filename,
-                       Encoder &encoder_function, Decoder &decoder_function) {
+                       Encoder &encoder_function, Decoder &decoder_function, bool compress_freqs) {
 
     typename gpu_ic::index::builder builder(input.num_docs());
     size_t postings = 0;
@@ -86,21 +90,27 @@ void create_collection(InputCollection const &input,
 
         for (auto const &plist : input) {
             size_t size = plist.docs.size();
-            builder.add_posting_list(size, plist.docs.begin(), encoder_function);
+          if(not compress_freqs) {
+                builder.add_posting_list(size, plist.docs.begin(), encoder_function, , compress_freqs);
+            }
+            else {
+                builder.add_posting_list(size, plist.freqs.begin(), encoder_function, , compress_freqs);
+            }
+
             postings += size;
             progress.update(1);
         }
     }
 
     gpu_ic::index coll;
-    builder.build(coll);
+    auto data_len = builder.build(coll);
     auto byte= mapper::freeze(coll, output_filename.c_str());
 
 
-    double bits_per_doc  = byte * 8.0 / postings;
-    std::cout << "Documents: " << postings << ", bytes: " << byte << ", bits/doc: " << bits_per_doc << std::endl;
+    double bits_per_doc  = data_len * 8.0 / postings;
+    std::cout << "Documents: " << postings << ", total size bytes: " << byte << ", bits/doc: " << bits_per_doc << std::endl;
 
-    verify_index(input, output_filename, decoder_function);
+    verify_index(input, output_filename, decoder_function, compress_freqs);
 }
 
 
@@ -109,18 +119,20 @@ int main(int argc, char** argv)
     std::string type;
     std::string input_basename;
     std::string output_filename;
+    bool compress_freqs = false;
 
     CLI::App app{"compress_index - a tool for compressing an index."};
     app.add_option("-t,--type", type, "Index type")->required();
     app.add_option("-c,--collection", input_basename, "Collection basename")->required();
     app.add_option("-o,--output", output_filename, "Output filename")->required();
+    app.add_flag("--freqs", compress_freqs, "Compress freqs instead of docs");
     CLI11_PARSE(app, argc, argv);
 
     binary_freq_collection input(input_basename.c_str());
     if (type == "cuda_bp") {
-        create_collection(input, output_filename, cuda_bp::encode<>, cuda_bp::decode);
+        create_collection(input, output_filename, cuda_bp::encode<>, cuda_bp::decode, compress_freqs);
     } else if (type == "cuda_vbyte") {
-        create_collection(input, output_filename, cuda_vbyte::encode<>, cuda_vbyte::decode<>);
+        create_collection(input, output_filename, cuda_vbyte::encode<>, cuda_vbyte::decode<>, compress_freqs);
     } else {
         std::cerr << "Unknown type" << std::endl;
     }
