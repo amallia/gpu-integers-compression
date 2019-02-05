@@ -91,10 +91,10 @@ void create_collection(InputCollection const &input,
         for (auto const &plist : input) {
             size_t size = plist.docs.size();
           if(not compress_freqs) {
-                builder.add_posting_list(size, plist.docs.begin(), encoder_function, , compress_freqs);
+                builder.add_posting_list(size, plist.docs.begin(), encoder_function, compress_freqs);
             }
             else {
-                builder.add_posting_list(size, plist.freqs.begin(), encoder_function, , compress_freqs);
+                builder.add_posting_list(size, plist.freqs.begin(), encoder_function, compress_freqs);
             }
 
             postings += size;
