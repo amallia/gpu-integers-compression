@@ -16,7 +16,7 @@ using namespace gpu_ic;
 using clock_type = std::chrono::high_resolution_clock;
 
 template <typename Decoder>
-void perftest(const std::string &filename, Decoder &decoder_function)
+void perftest(const std::string &filename, Decoder &decoder_function, const std::vector<uint32_t> &terms)
 {
     gpu_ic::index coll;
     mio::mmap_source m;
@@ -25,13 +25,12 @@ void perftest(const std::string &filename, Decoder &decoder_function)
     mapper::map(coll, m);
 
     size_t min_length = pow(2, 15); ;
-    size_t max_number_of_lists = 500000000;
 
     std::vector<std::pair<size_t, std::vector<uint8_t>>> long_lists;
-    long_lists.reserve(max_number_of_lists);
-    for (size_t i = 0; i < coll.size() and long_lists.size() < max_number_of_lists; ++i) {
-        std::vector<uint8_t> tmp;
-        auto n = coll.get_data(tmp, i);
+    long_lists.reserve(terms.size());
+    for(auto&& t :terms) {
+	std::vector<uint8_t> tmp;
+        auto n = coll.get_data(tmp, t);
         if (n >= min_length) {
             long_lists.push_back(std::make_pair(n, tmp));
         }
@@ -98,29 +97,29 @@ int main(int argc, char const *argv[])
 {
     std::string type;
     std::string index_basename;
-    // std::string query_basename;
+    std::string query_basename;
 
     CLI::App app{"compress_index - a tool for compressing an index."};
     app.add_option("-t,--type", type, "Index type")->required();
     app.add_option("-i,--index", index_basename, "Index basename")->required();
-    // app.add_option("-q,--query", query_basename, "Query basename")->required();
+    app.add_option("-q,--query", query_basename, "Query basename")->required();
     CLI11_PARSE(app, argc, argv);
 
-    // std::vector<uint32_t> terms;
-    // std::filebuf fb;
-    // size_t queries_num = 0;
-    // if (fb.open(query_basename, std::ios::in)) {
-    //     std::istream is(&fb);
-    //     std::vector<uint32_t> q;
-    //     while (read_query(q, is)) {
-    //         queries_num+=1;
-    //         terms.insert(terms.end(), q.begin(), q.end());
-    //     }
-    // }
+     std::vector<uint32_t> terms;
+     std::filebuf fb;
+     size_t queries_num = 0;
+     if (fb.open(query_basename, std::ios::in)) {
+         std::istream is(&fb);
+         std::vector<uint32_t> q;
+         while (read_query(q, is)) {
+             queries_num+=1;
+             terms.insert(terms.end(), q.begin(), q.end());
+         }
+     }
     if (type == "cuda_bp") {
-        perftest(index_basename, cuda_bp::decode);
+        perftest(index_basename, cuda_bp::decode, terms);
     } else if (type == "cuda_vbyte") {
-        perftest(index_basename, cuda_vbyte::decode<>);
+        perftest(index_basename, cuda_vbyte::decode<>, terms);
     } else {
         std::cerr << "Unknown type" << std::endl;
     }
