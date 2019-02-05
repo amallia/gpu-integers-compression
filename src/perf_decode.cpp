@@ -17,7 +17,7 @@ using namespace FastPForLib;
 using clock_type = std::chrono::high_resolution_clock;
 
 template<typename Codec>
-void perftest(const std::string &filename)
+void perftest(const std::string &filename, const std::vector<uint32_t> &terms)
 {
     Codec codec;
     gpu_ic::index<Codec> coll;
@@ -30,24 +30,25 @@ void perftest(const std::string &filename)
     size_t max_number_of_lists = 500000000;
 
     std::vector<std::pair<size_t, std::vector<uint8_t>>> long_lists;
-    long_lists.reserve(max_number_of_lists);
-    for (size_t i = 0; i < coll.size() and long_lists.size() < max_number_of_lists; ++i) {
+    long_lists.reserve(terms.size());
+    for(auto&& t : terms) {
         std::vector<uint8_t> tmp;
-        auto n = coll.get_data(tmp, i);
+        auto n = coll.get_data(tmp, t);
         if (n >= min_length) {
             long_lists.push_back(std::make_pair(n, tmp));
         }
     }
+
     std::cout << "Scanning " << long_lists.size() << " posting lists, whose length is between " << min_length << std::endl;
     std::chrono::duration<double> elapsed(0);
     size_t postings = 0;
     for (auto i: long_lists) {
         std::vector<uint32_t> decode_values(i.first);
-    	auto start = clock_type::now();
+        auto start = clock_type::now();
         size_t n = 0;
         codec.decodeArray(reinterpret_cast<uint32_t const *>(i.second.data()), i.second.size()/4, reinterpret_cast<uint32_t*>(decode_values.data()), n);
-    	auto end = clock_type::now();
-    	elapsed += end - start;
+        auto end = clock_type::now();
+        elapsed += end - start;
         if(n != i.first) {
             std::cerr << "Error: number of decoded values " << n << ", actual number of values" << i.first << std::endl;
         }
@@ -85,38 +86,38 @@ int main(int argc, char const *argv[])
 {
     std::string type;
     std::string index_basename;
-    // std::string query_basename;
+    std::string query_basename;
 
     CLI::App app{"compress_index - a tool for compressing an index."};
     app.add_option("-t,--type", type, "Index type")->required();
     app.add_option("-i,--index", index_basename, "Index basename")->required();
-    // app.add_option("-q,--query", query_basename, "Query basename")->required();
+    app.add_option("-q,--query", query_basename, "Query basename")->required();
     CLI11_PARSE(app, argc, argv);
 
-    // std::vector<uint32_t> terms;
-    // std::filebuf fb;
-    // size_t queries_num = 0;
-    // if (fb.open(query_basename, std::ios::in)) {
-    //     std::istream is(&fb);
-    //     std::vector<uint32_t> q;
-    //     while (read_query(q, is)) {
-    //         queries_num+=1;
-    //         terms.insert(terms.end(), q.begin(), q.end());
-    //     }
-    // }
+    std::vector<uint32_t> terms;
+    std::filebuf fb;
+    size_t queries_num = 0;
+    if (fb.open(query_basename, std::ios::in)) {
+        std::istream is(&fb);
+        std::vector<uint32_t> q;
+        while (read_query(q, is)) {
+            queries_num+=1;
+            terms.insert(terms.end(), q.begin(), q.end());
+        }
+    }
 
     if (type == "simdbp") {
         CompositeCodec<SIMDBinaryPacking, VariableByte> codec;
-        perftest<decltype(codec)>(index_basename);
+        perftest<decltype(codec)>(index_basename, terms);
     } else if (type == "streamvbyte") {
         StreamVByte codec;
-        perftest<decltype(codec)>(index_basename);
+        perftest<decltype(codec)>(index_basename, terms);
     } else if (type == "bp") {
         CompositeCodec<BP32, VariableByte> codec;
-        perftest<decltype(codec)>(index_basename);
+        perftest<decltype(codec)>(index_basename, terms);
     } else if (type == "varintgb") {
         VarIntGB<> codec;
-        perftest<decltype(codec)>(index_basename);
+        perftest<decltype(codec)>(index_basename, terms);
     } else {
         std::cerr << "Unknown type" << std::endl;
     }
