@@ -24,16 +24,12 @@ void perftest(const std::string &filename, Decoder &decoder_function, const std:
     m.map(filename, error);
     mapper::map(coll, m);
 
-    size_t min_length = pow(2, 15); ;
-
     std::vector<std::pair<size_t, std::vector<uint8_t>>> long_lists;
     long_lists.reserve(terms.size());
     for(auto&& t :terms) {
 	std::vector<uint8_t> tmp;
         auto n = coll.get_data(tmp, t);
-        if (n >= min_length) {
-            long_lists.push_back(std::make_pair(n, tmp));
-        }
+        long_lists.push_back(std::make_pair(n, tmp));
     }
     CUDA_CHECK_ERROR(cudaSetDevice(0));
     warmUpGPU<<<1, 1>>>();
