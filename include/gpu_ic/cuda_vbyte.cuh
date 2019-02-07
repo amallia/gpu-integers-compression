@@ -123,7 +123,7 @@ static void decode(uint32_t *d_out, const uint8_t *d_in, size_t n) {
     size_t         block_num  = ceil((double)n / block_size);
     size_t         offset_len = 4 * block_num + 4;
     const uint8_t *d_payload  = d_in + offset_len;
-    kernel_decode_vbyte<<<ceil((double)n / block_size), block_size>>>(
+    kernel_decode_vbyte<block_size><<<ceil((double)n / block_size), block_size>>>(
         d_out,
         reinterpret_cast<const uint32_t *>(d_payload),
         n,
