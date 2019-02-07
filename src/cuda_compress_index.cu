@@ -130,9 +130,11 @@ int main(int argc, char** argv)
 
     binary_freq_collection input(input_basename.c_str());
     if (type == "cuda_bp") {
-        create_collection(input, output_filename, cuda_bp::encode<>, cuda_bp::decode, compress_freqs);
+        create_collection(input, output_filename, cuda_bp::encode<>, cuda_bp::decode<>, compress_freqs);
     } else if (type == "cuda_vbyte") {
         create_collection(input, output_filename, cuda_vbyte::encode<>, cuda_vbyte::decode<>, compress_freqs);
+    } else if (type == "cuda_vbyte1024") {
+        create_collection(input, output_filename, cuda_vbyte::encode<1024>, cuda_vbyte::decode<1024>, compress_freqs);
     } else {
         std::cerr << "Unknown type" << std::endl;
     }

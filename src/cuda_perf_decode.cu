@@ -113,7 +113,7 @@ int main(int argc, char const *argv[])
          }
      }
     if (type == "cuda_bp") {
-        perftest(index_basename, cuda_bp::decode, terms);
+        perftest(index_basename, cuda_bp::decode<>, terms);
     } else if (type == "cuda_vbyte") {
         perftest(index_basename, cuda_vbyte::decode<>, terms);
     } else {
