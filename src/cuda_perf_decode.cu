@@ -33,7 +33,7 @@ void perftest(const std::string &filename, Decoder &decoder_function, const std:
     }
     CUDA_CHECK_ERROR(cudaSetDevice(0));
     warmUpGPU<<<1, 1>>>();
-    std::cout << "Scanning " << long_lists.size() << " posting lists, whose length is between " << min_length << std::endl;
+    std::cout << "Scanning " << long_lists.size() << " posting lists" << std::endl;
     std::chrono::duration<double> elapsed(0);
     size_t postings = 0;
     for (auto i: long_lists) {

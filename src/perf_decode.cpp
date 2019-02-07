@@ -34,7 +34,7 @@ void perftest(const std::string &filename, const std::vector<uint32_t> &terms)
         long_lists.push_back(std::make_pair(n, tmp));
     }
 
-    std::cout << "Scanning " << long_lists.size() << " posting lists, whose length is between " << min_length << std::endl;
+    std::cout << "Scanning " << long_lists.size() << " posting list" << std::endl;
     std::chrono::duration<double> elapsed(0);
     size_t postings = 0;
     for (auto i: long_lists) {
