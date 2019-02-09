@@ -113,7 +113,7 @@ __global__ void kernel_decode_vbyte(uint32_t *      out,
         uint32_t bit = min_offsets[threadIdx.x + 1] - min_offsets[threadIdx.x];
         uint32_t header_len = 2 * (block_size/32);
         out[index]   = extract(in + offset + header_len, min_offsets[threadIdx.x], bit);
-    } else {
+    } else if(index < n){
         uint8_t  bit_size = *(in + offset);
         out[index]        = extract(in + offset+1, threadIdx.x * bit_size, bit_size);
     }
