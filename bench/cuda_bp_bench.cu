@@ -75,16 +75,6 @@ public:
     uint32_t * d_decoded;
 };
 
-BENCHMARK_TEMPLATE_DEFINE_F(ValuesFixture, decodeUniform32, gpu_ic::UniformDataGenerator, 32)(benchmark::State& state) {
-    while (state.KeepRunning()) {
-        cuda_bp::decode<32>(d_decoded, d_encoded, decoded_values.size());
-        CUDA_CHECK_ERROR(cudaDeviceSynchronize());
-    }
-    auto bpi = double(8*encoded_values.size())/decoded_values.size();
-    state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);
-}
-BENCHMARK_REGISTER_F(ValuesFixture, decodeUniform32)->RangeMultiplier(2)->Range((1ULL << 15), (1ULL<<25));
-
 BENCHMARK_TEMPLATE_DEFINE_F(ValuesFixture, decodeUniform128, gpu_ic::UniformDataGenerator, 128)(benchmark::State& state) {
     while (state.KeepRunning()) {
         cuda_bp::decode<128>(d_decoded, d_encoded, decoded_values.size());
@@ -95,15 +85,15 @@ BENCHMARK_TEMPLATE_DEFINE_F(ValuesFixture, decodeUniform128, gpu_ic::UniformData
 }
 BENCHMARK_REGISTER_F(ValuesFixture, decodeUniform128)->RangeMultiplier(2)->Range((1ULL << 15), (1ULL<<25));
 
-BENCHMARK_TEMPLATE_DEFINE_F(ValuesFixture, decodeClustered32, gpu_ic::ClusteredDataGenerator, 32)(benchmark::State& state) {
+BENCHMARK_TEMPLATE_DEFINE_F(ValuesFixture, decodeUniform256, gpu_ic::UniformDataGenerator, 256)(benchmark::State& state) {
     while (state.KeepRunning()) {
-        cuda_bp::decode<32>(d_decoded, d_encoded, decoded_values.size());
+        cuda_bp::decode<256>(d_decoded, d_encoded, decoded_values.size());
         CUDA_CHECK_ERROR(cudaDeviceSynchronize());
     }
     auto bpi = double(8*encoded_values.size())/decoded_values.size();
     state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);
 }
-BENCHMARK_REGISTER_F(ValuesFixture, decodeClustered32)->RangeMultiplier(2)->Range((1ULL << 15), (1ULL<<25));
+BENCHMARK_REGISTER_F(ValuesFixture, decodeUniform256)->RangeMultiplier(2)->Range((1ULL << 15), (1ULL<<25));
 
 BENCHMARK_TEMPLATE_DEFINE_F(ValuesFixture, decodeClustered128, gpu_ic::ClusteredDataGenerator, 128)(benchmark::State& state) {
     while (state.KeepRunning()) {
@@ -114,5 +104,15 @@ BENCHMARK_TEMPLATE_DEFINE_F(ValuesFixture, decodeClustered128, gpu_ic::Clustered
     state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);
 }
 BENCHMARK_REGISTER_F(ValuesFixture, decodeClustered128)->RangeMultiplier(2)->Range((1ULL << 15), (1ULL<<25));
+
+BENCHMARK_TEMPLATE_DEFINE_F(ValuesFixture, decodeClustered256, gpu_ic::ClusteredDataGenerator, 256)(benchmark::State& state) {
+    while (state.KeepRunning()) {
+        cuda_bp::decode<256>(d_decoded, d_encoded, decoded_values.size());
+        CUDA_CHECK_ERROR(cudaDeviceSynchronize());
+    }
+    auto bpi = double(8*encoded_values.size())/decoded_values.size();
+    state.counters["bpi"] = benchmark::Counter(bpi, benchmark::Counter::kAvgThreads);
+}
+BENCHMARK_REGISTER_F(ValuesFixture, decodeClustered256)->RangeMultiplier(2)->Range((1ULL << 15), (1ULL<<25));
 
 BENCHMARK_MAIN();
