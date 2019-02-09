@@ -131,6 +131,16 @@ int main(int argc, char** argv)
     binary_freq_collection input(input_basename.c_str());
     if (type == "cuda_bp") {
         create_collection(input, output_filename, cuda_bp::encode<>, cuda_bp::decode<>, compress_freqs);
+    } else if (type == "cuda_bp64") {
+        create_collection(input, output_filename, cuda_bp::encode<64>, cuda_bp::decode<64>, compress_freqs);
+    } else if (type == "cuda_bp128") {
+        create_collection(input, output_filename, cuda_bp::encode<128>, cuda_bp::decode<128>, compress_freqs);
+    } else if (type == "cuda_bp256") {
+        create_collection(input, output_filename, cuda_bp::encode<256>, cuda_bp::decode<256>, compress_freqs);
+    } else if (type == "cuda_bp512") {
+        create_collection(input, output_filename, cuda_bp::encode<512>, cuda_bp::decode<512>, compress_freqs);
+    } else if (type == "cuda_bp1024") {
+        create_collection(input, output_filename, cuda_bp::encode<1024>, cuda_bp::decode<1024>, compress_freqs);
     } else if (type == "cuda_vbyte") {
         create_collection(input, output_filename, cuda_vbyte::encode<>, cuda_vbyte::decode<>, compress_freqs);
     } else if (type == "cuda_vbyte1024") {

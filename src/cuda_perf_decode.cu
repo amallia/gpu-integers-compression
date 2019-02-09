@@ -114,8 +114,20 @@ int main(int argc, char const *argv[])
      }
     if (type == "cuda_bp") {
         perftest(index_basename, cuda_bp::decode<>, terms);
+    } else if (type == "cuda_bp64") {
+        perftest(index_basename, cuda_bp::decode<64>, terms);
+    } else if (type == "cuda_bp128") {
+        perftest(index_basename, cuda_bp::decode<128>, terms);
+    } else if (type == "cuda_bp256") {
+        perftest(index_basename, cuda_bp::decode<256>, terms);
+    } else if (type == "cuda_bp512") {
+        perftest(index_basename, cuda_bp::decode<512>, terms);
+    } else if (type == "cuda_bp1024") {
+        perftest(index_basename, cuda_bp::decode<1024>, terms);
     } else if (type == "cuda_vbyte") {
         perftest(index_basename, cuda_vbyte::decode<>, terms);
+    } else if (type == "cuda_vbyte1024") {
+        perftest(index_basename, cuda_vbyte::decode<1024>, terms);
     } else {
         std::cerr << "Unknown type" << std::endl;
     }
