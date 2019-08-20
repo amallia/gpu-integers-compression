@@ -1,7 +1,9 @@
 GPU Integers Compression
 ==========================
 
-GPU-Accelerated Decoding of Integer Lists
+This code was used in the experiments of the following paper:
+
+Antonio Mallia, Michał Siedlaczek, Torsten Suel, Mohamed Zahran. **GPU-Accelerated Decoding of Integer Lists**. In The 28th ACM International Conference on Information and Knowledge Management (CIKM). 2019
 
 ## Usage 
 
